@@ -1,6 +1,8 @@
 const API_BASE =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
 
+export { API_BASE };
+
 const DEFAULT_USER_ID =
   import.meta.env.VITE_DEFAULT_USER_ID ?? "test-user-001";
 

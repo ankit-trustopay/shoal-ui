@@ -5,7 +5,7 @@ import { SwarmSessionHeader } from '../components/swarm/SwarmSessionHeader';
 import { SwarmOverviewSidebar } from '../components/swarm/SwarmOverviewSidebar';
 import { AgentFeed } from '../components/swarm/AgentFeed';
 import { SwarmTelemetryPanel } from '../components/swarm/SwarmTelemetryPanel';
-import { getSwarm } from '../lib/api';
+import { API_BASE, type SwarmRecord } from '../lib/api';
 import {
   LIVE_SESSION,
   activePersonas,
@@ -27,6 +27,7 @@ export function LiveSwarm() {
       setPremise(LIVE_SESSION.title);
       setSessionId(LIVE_SESSION.id);
       setLoading(false);
+      setFetchError(null);
       return;
     }
 
@@ -35,9 +36,42 @@ export function LiveSwarm() {
     async function loadSwarm() {
       setLoading(true);
       setFetchError(null);
+      setPremise(null);
+
+      console.log('Fetching swarm ID:', swarmId);
 
       try {
-        const swarm = await getSwarm(swarmId);
+        const url = `${API_BASE}/api/swarms/${encodeURIComponent(swarmId)}`;
+        const res = await fetch(url);
+
+        if (!res.ok) {
+          let errorBody = '';
+          try {
+            const json = (await res.json()) as { error?: string };
+            errorBody = json.error ?? JSON.stringify(json);
+          } catch {
+            errorBody = await res.text().catch(() => res.statusText);
+          }
+
+          console.error(
+            'Swarm fetch failed:',
+            res.status,
+            res.statusText,
+            errorBody
+          );
+
+          throw new Error(
+            `HTTP ${res.status} ${res.statusText}${errorBody ? ` — ${errorBody}` : ''}`
+          );
+        }
+
+        const swarm = (await res.json()) as SwarmRecord;
+
+        if (!swarm.premise) {
+          console.error('Swarm fetch returned incomplete data:', swarm);
+          throw new Error('Swarm data is missing premise');
+        }
+
         if (cancelled) return;
 
         setPremise(swarm.premise);
@@ -45,10 +79,13 @@ export function LiveSwarm() {
       } catch (err) {
         if (cancelled) return;
 
-        setFetchError(
-          err instanceof Error ? err.message : 'Failed to load swarm'
-        );
-        setPremise(LIVE_SESSION.title);
+        console.error('Swarm fetch error:', err);
+
+        const message =
+          err instanceof Error ? err.message : 'Unknown error loading swarm';
+
+        setFetchError(message);
+        setPremise(null);
         setSessionId(swarmId);
       } finally {
         if (!cancelled) {
@@ -64,19 +101,32 @@ export function LiveSwarm() {
     };
   }, [swarmId]);
 
-  const title = loading
-    ? 'Loading swarm session...'
-    : premise ?? LIVE_SESSION.title;
+  if (swarmId && loading) {
+    return (
+      <PageContainer width="full" className="py-6 md:py-8">
+        <SwarmSessionHeader sessionId={swarmId} title="Loading..." />
+      </PageContainer>
+    );
+  }
+
+  if (swarmId && fetchError) {
+    return (
+      <PageContainer width="full" className="py-6 md:py-8">
+        <SwarmSessionHeader sessionId={swarmId} title="Swarm session" />
+        <div
+          className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-800"
+          role="alert">
+          <p className="font-semibold">Error loading swarm: {fetchError}</p>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  const title = premise ?? LIVE_SESSION.title;
 
   return (
     <PageContainer width="full" className="py-6 md:py-8">
       <SwarmSessionHeader sessionId={sessionId} title={title} />
-
-      {fetchError &&
-      <p className="mb-6 text-sm text-red-600" role="alert">
-          {fetchError}
-        </p>
-      }
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         <div className="lg:col-span-3 order-2 lg:order-1">
