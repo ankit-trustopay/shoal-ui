@@ -13,21 +13,31 @@ import {
   swarmTelemetry,
 } from '../data/liveSwarm';
 
+function SwarmError({ message }: { message: string }) {
+  return (
+    <div
+      className="rounded-2xl border-4 border-red-600 bg-red-50 px-8 py-10 text-red-900 text-xl md:text-2xl font-bold leading-relaxed"
+      role="alert">
+      ERROR FETCHING SWARM: {message}
+    </div>
+  );
+}
+
 export function LiveSwarm() {
   const [searchParams] = useSearchParams();
   const swarmId = searchParams.get('swarmId');
 
   const [premise, setPremise] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState(LIVE_SESSION.id);
-  const [loading, setLoading] = useState(Boolean(swarmId));
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!swarmId) {
-      setPremise(LIVE_SESSION.title);
-      setSessionId(LIVE_SESSION.id);
       setLoading(false);
-      setFetchError(null);
+      setFetchError('Missing swarmId in URL');
+      setPremise(null);
+      setSessionId(null);
       return;
     }
 
@@ -37,6 +47,7 @@ export function LiveSwarm() {
       setLoading(true);
       setFetchError(null);
       setPremise(null);
+      setSessionId(swarmId);
 
       console.log('Fetching swarm ID:', swarmId);
 
@@ -86,7 +97,6 @@ export function LiveSwarm() {
 
         setFetchError(message);
         setPremise(null);
-        setSessionId(swarmId);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -101,32 +111,41 @@ export function LiveSwarm() {
     };
   }, [swarmId]);
 
-  if (swarmId && loading) {
+  if (loading) {
     return (
       <PageContainer width="full" className="py-6 md:py-8">
-        <SwarmSessionHeader sessionId={swarmId} title="Loading..." />
+        <SwarmSessionHeader
+          sessionId={swarmId ?? '—'}
+          title="Loading your swarm data..."
+        />
       </PageContainer>
     );
   }
 
-  if (swarmId && fetchError) {
+  if (fetchError) {
     return (
       <PageContainer width="full" className="py-6 md:py-8">
-        <SwarmSessionHeader sessionId={swarmId} title="Swarm session" />
-        <div
-          className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-800"
-          role="alert">
-          <p className="font-semibold">Error loading swarm: {fetchError}</p>
-        </div>
+        <SwarmSessionHeader
+          sessionId={swarmId ?? '—'}
+          title="Swarm session"
+        />
+        <SwarmError message={fetchError} />
       </PageContainer>
     );
   }
 
-  const title = premise ?? LIVE_SESSION.title;
+  if (!premise || !sessionId) {
+    return (
+      <PageContainer width="full" className="py-6 md:py-8">
+        <SwarmSessionHeader sessionId={swarmId ?? '—'} title="Swarm session" />
+        <SwarmError message="Swarm data is unavailable" />
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer width="full" className="py-6 md:py-8">
-      <SwarmSessionHeader sessionId={sessionId} title={title} />
+      <SwarmSessionHeader sessionId={sessionId} title={premise} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         <div className="lg:col-span-3 order-2 lg:order-1">
