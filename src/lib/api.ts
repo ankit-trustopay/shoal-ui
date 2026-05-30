@@ -14,6 +14,18 @@ export interface CreateSwarmResponse {
   swarmId: string;
 }
 
+export type SwarmStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+
+export interface SwarmRecord {
+  id: string;
+  userId: string;
+  premise: string;
+  status: SwarmStatus;
+  agentCount: number;
+  resultData: unknown;
+  createdAt: string;
+}
+
 export interface ApiErrorBody {
   error?: string;
 }
@@ -42,4 +54,22 @@ export async function createSwarm(
   }
 
   return { swarmId: data.swarmId };
+}
+
+export async function getSwarm(swarmId: string): Promise<SwarmRecord> {
+  const res = await fetch(
+    `${API_BASE}/api/swarms/${encodeURIComponent(swarmId)}`,
+  );
+
+  const data = (await res.json()) as SwarmRecord & ApiErrorBody;
+
+  if (!res.ok) {
+    throw new Error(data.error ?? "Failed to load swarm");
+  }
+
+  if (!data.premise) {
+    throw new Error("Swarm data is incomplete");
+  }
+
+  return data;
 }
