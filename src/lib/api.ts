@@ -35,6 +35,17 @@ export interface SwarmEvidenceRecord {
   snippet: string;
 }
 
+/** Lightweight row from GET /api/swarms */
+export interface SwarmHistoryListItem {
+  id: string;
+  premise: string;
+  confidence: number | null;
+  status: SwarmStatus;
+  createdAt: string;
+  cost: number | null;
+  runtime: number | null;
+}
+
 export interface SwarmRecord {
   id: string;
   userId: string;
@@ -82,6 +93,22 @@ export async function createSwarm(
   }
 
   return { swarmId: data.swarmId };
+}
+
+export async function listSwarms(): Promise<SwarmHistoryListItem[]> {
+  const res = await fetch(`${API_BASE}/api/swarms`);
+  const data: unknown = await res.json();
+
+  if (!res.ok) {
+    const body = data as ApiErrorBody;
+    throw new Error(body.error ?? "Failed to load swarm history");
+  }
+
+  if (!Array.isArray(data)) {
+    throw new Error("Invalid swarm history response");
+  }
+
+  return data as SwarmHistoryListItem[];
 }
 
 export async function getSwarm(swarmId: string): Promise<SwarmRecord> {
