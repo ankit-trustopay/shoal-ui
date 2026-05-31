@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageContainer } from '../components/ui/PageContainer';
 import { EnterpriseLiveConsole } from '../components/swarm/live-console/EnterpriseLiveConsole';
+import { SwarmDeliberationFailed } from '../components/swarm/live-console/SwarmDeliberationFailed';
 import { deriveSwarmStats } from '../components/swarm/live-console/swarmStats';
 import { useSwarmPolling } from '../hooks/useSwarmPolling';
 import { parseAgentProfiles } from '../lib/agentProfiles';
@@ -22,7 +23,7 @@ export function LiveSwarm() {
   const [searchParams] = useSearchParams();
   const swarmId = searchParams.get('swarmId');
 
-  const { swarm, initialLoading, isPolling, fetchError } =
+  const { swarm, initialLoading, isPolling, isFailed, fetchError } =
     useSwarmPolling(swarmId);
 
   const managerMessage = useMemo(() => {
@@ -46,9 +47,8 @@ export function LiveSwarm() {
     return `SWM_${compact.slice(0, 8) || 'SEED'}`;
   }, [swarmId]);
 
-  const deliberating = isPolling && !fetchError;
-  const showFailed =
-    swarm != null && isSwarmFailed(swarm) && !managerMessage && !fetchError;
+  const deliberating = isPolling && !fetchError && !isFailed;
+  const failed = swarm != null && (isFailed || isSwarmFailed(swarm));
 
   if (!swarmId) {
     return (
@@ -66,16 +66,19 @@ export function LiveSwarm() {
     );
   }
 
+  if (failed) {
+    return (
+      <PageContainer width="full" className="py-6 md:py-10">
+        <SwarmDeliberationFailed premise={swarm?.premise ?? null} />
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer width="full" className="py-6 md:py-10">
       {fetchError && swarm && (
         <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
           {fetchError}
-        </p>
-      )}
-      {showFailed && (
-        <p className="mb-4 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-          Swarm processing failed on the server. Try igniting a new swarm.
         </p>
       )}
       <EnterpriseLiveConsole

@@ -1,10 +1,13 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Zap } from 'lucide-react';
 import {
-  buildSwarmReportText,
-  downloadTextFile,
+  buildSwarmReportHtml,
+  buildSwarmReportMarkdown,
+  downloadHtmlFile,
+  downloadMarkdownFile,
 } from '../../../lib/buildSwarmReport';
+import { parseSwarmOverview } from '../../../lib/swarmOverview';
 import type { SwarmConsoleStats } from './swarmStats';
 
 const outlineBtnClass =
@@ -16,6 +19,7 @@ interface LiveConsoleActionBarProps {
   managerText: string | null;
   stats: SwarmConsoleStats;
   sessionCode: string;
+  resultData: unknown;
   actionsDisabled?: boolean;
   onToast: (message: string) => void;
 }
@@ -26,10 +30,16 @@ export function LiveConsoleActionBar({
   managerText,
   stats,
   sessionCode,
+  resultData,
   actionsDisabled = false,
   onToast,
 }: LiveConsoleActionBarProps) {
   const navigate = useNavigate();
+
+  const { recommendedActions, minorityDissent } = useMemo(
+    () => parseSwarmOverview(resultData),
+    [resultData],
+  );
 
   const consensus = managerText?.trim() ?? '';
   const canUseConsensus = consensus.length > 0 && !actionsDisabled;
@@ -54,22 +64,30 @@ export function LiveConsoleActionBar({
       return;
     }
 
-    const report = buildSwarmReportText({
+    const reportInput = {
       swarmId,
       premise,
       stats,
       managerConsensus: consensus,
       sessionCode,
-    });
+      recommendedActions,
+      minorityDissent,
+    };
+
+    const markdown = buildSwarmReportMarkdown(reportInput);
+    const html = buildSwarmReportHtml(reportInput);
 
     const safeId = swarmId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 24) || 'swarm';
-    downloadTextFile(`shoal-report-${safeId}.txt`, report);
-    onToast('Report downloaded');
+    downloadMarkdownFile(`shoal-report-${safeId}.md`, markdown);
+    downloadHtmlFile(`shoal-report-${safeId}.html`, html);
+    onToast('Institutional report downloaded (.md + .html)');
   }, [
     canUseConsensus,
     consensus,
+    minorityDissent,
     onToast,
     premise,
+    recommendedActions,
     sessionCode,
     stats,
     swarmId,

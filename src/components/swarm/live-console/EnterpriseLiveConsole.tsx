@@ -398,6 +398,7 @@ export function EnterpriseLiveConsole({
         managerText={managerText}
         stats={stats}
         sessionCode={sessionCode}
+        resultData={resultData}
         actionsDisabled={showDeliberating}
         onToast={showToast}
       />

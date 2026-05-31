@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSwarm, type SwarmRecord } from '../lib/api';
-import { isSwarmProcessing } from '../lib/swarmReady';
+import { isSwarmFailed, isSwarmProcessing } from '../lib/swarmReady';
 
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_MS = 120_000;
@@ -34,6 +34,14 @@ export function useSwarmPolling(swarmId: string | null) {
 
     startedAtRef.current = Date.now();
 
+    function stopPolling(): void {
+      setIsPolling(false);
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = undefined;
+      }
+    }
+
     async function pollOnce(): Promise<void> {
       try {
         const data = await fetchLatest();
@@ -41,27 +49,24 @@ export function useSwarmPolling(swarmId: string | null) {
 
         setFetchError(null);
 
+        if (isSwarmFailed(data)) {
+          stopPolling();
+          return;
+        }
+
         if (isSwarmProcessing(data)) {
           setIsPolling(true);
           return;
         }
 
-        setIsPolling(false);
-        if (intervalId) {
-          clearInterval(intervalId);
-          intervalId = undefined;
-        }
+        stopPolling();
       } catch (err) {
         if (cancelled) return;
         console.error('Swarm poll error:', err);
         setFetchError(
           err instanceof Error ? err.message : 'Unknown error loading swarm',
         );
-        setIsPolling(false);
-        if (intervalId) {
-          clearInterval(intervalId);
-          intervalId = undefined;
-        }
+        stopPolling();
       } finally {
         if (!cancelled) {
           setInitialLoading(false);
@@ -73,8 +78,7 @@ export function useSwarmPolling(swarmId: string | null) {
 
     intervalId = setInterval(() => {
       if (Date.now() - startedAtRef.current > MAX_POLL_MS) {
-        clearInterval(intervalId);
-        setIsPolling(false);
+        stopPolling();
         setFetchError(
           'Swarm deliberation is taking longer than expected. Please refresh in a moment.',
         );
@@ -91,10 +95,13 @@ export function useSwarmPolling(swarmId: string | null) {
     };
   }, [swarmId, fetchLatest]);
 
+  const isFailed = swarm != null && isSwarmFailed(swarm);
+
   return {
     swarm,
     initialLoading,
     isPolling,
+    isFailed,
     fetchError,
   };
 }
