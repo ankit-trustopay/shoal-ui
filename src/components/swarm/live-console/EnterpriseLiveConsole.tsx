@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Download,
+  ExternalLink,
+  Quote,
+  Zap,
+} from 'lucide-react';
 import {
   CONSOLE_TABS,
   LIVE_CONSOLE_MOCK,
@@ -65,16 +72,14 @@ function StatBox({
   unit?: string;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200/80 bg-gray-50/80 px-4 py-3 min-w-[100px]">
-      <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+    <div className="rounded-xl border border-gray-200/60 bg-white/70 px-5 py-4 min-w-[108px]">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1.5">
         {label}
       </p>
       <p className="text-lg font-bold text-gray-900 tabular-nums">
         {value}
         {unit && (
-          <span className="text-sm font-medium text-gray-500 ml-0.5">
-            {unit}
-          </span>
+          <span className="text-sm font-medium text-gray-500 ml-0.5">{unit}</span>
         )}
       </p>
     </div>
@@ -84,51 +89,91 @@ function StatBox({
 function ConsensusSkeleton() {
   return (
     <div className="animate-pulse space-y-3" aria-hidden>
-      <div className="h-3 w-24 rounded bg-gray-200" />
-      <div className="h-5 w-full rounded bg-gray-200" />
-      <div className="h-5 w-[95%] rounded bg-gray-200" />
-      <div className="h-5 w-[88%] rounded bg-gray-200" />
-      <div className="h-5 w-[72%] rounded bg-gray-200" />
+      <div className="h-5 w-full rounded bg-orange-100/80" />
+      <div className="h-5 w-[95%] rounded bg-orange-100/80" />
+      <div className="h-5 w-[88%] rounded bg-orange-100/80" />
     </div>
   );
 }
 
 function TitleSkeleton() {
   return (
-    <div className="animate-pulse max-w-4xl space-y-3" aria-hidden>
-      <div className="h-10 w-full rounded-lg bg-gray-200" />
-      <div className="h-10 w-[90%] rounded-lg bg-gray-200" />
+    <div className="animate-pulse max-w-4xl space-y-3 mb-8" aria-hidden>
+      <div className="h-10 w-full rounded-lg bg-orange-100/80" />
+      <div className="h-10 w-[92%] rounded-lg bg-orange-100/80" />
     </div>
   );
 }
 
-function VoteDistributionBar() {
-  const { for: forVotes, against, neutral } = LIVE_CONSOLE_MOCK.votes;
-  const total = forVotes + against + neutral;
-  const forPct = (forVotes / total) * 100;
-  const againstPct = (against / total) * 100;
-  const neutralPct = (neutral / total) * 100;
+function TopActionBar() {
+  const outlineBtn =
+    'inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors';
 
   return (
-    <section className="rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <MonoLabel>Vote distribution</MonoLabel>
-        <div className="flex flex-wrap gap-4 text-sm">
-          <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
-            For <strong className="text-gray-900">{forVotes}</strong>
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-            Against <strong className="text-gray-900">{against}</strong>
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
-            Neutral <strong className="text-gray-900">{neutral}</strong>
-          </span>
-        </div>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <Link
+        to="/app/history"
+        className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+      >
+        <ArrowLeft size={16} />
+        All swarms
+      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className={outlineBtn}>
+          Copy summary
+        </button>
+        <button type="button" className={outlineBtn}>
+          <Download size={16} />
+          Export
+        </button>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors shadow-sm"
+        >
+          <Zap size={16} />
+          Re-deploy
+        </button>
       </div>
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100">
+    </div>
+  );
+}
+
+function VoteDistributionSection() {
+  const votes = LIVE_CONSOLE_MOCK.votes;
+  const total = votes.totalAgents;
+  const forPct = (votes.for / total) * 100;
+  const againstPct = (votes.against / total) * 100;
+  const neutralPct = (votes.neutral / total) * 100;
+
+  const columns = [
+    {
+      label: 'For',
+      percent: `${votes.forPercent}%`,
+      count: votes.for,
+      dotClass: 'bg-orange-500',
+    },
+    {
+      label: 'Against',
+      percent: `${votes.againstPercent}%`,
+      count: votes.against,
+      dotClass: 'bg-red-500',
+    },
+    {
+      label: 'Neutral',
+      percent: `${votes.neutralPercent}%`,
+      count: votes.neutral,
+      dotClass: 'bg-gray-300',
+    },
+  ];
+
+  return (
+    <section className="rounded-2xl border border-gray-200/80 bg-white p-6 sm:p-8 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <MonoLabel>Vote distribution</MonoLabel>
+        <p className="text-sm text-gray-500">{votes.totalAgents} agents voting</p>
+      </div>
+
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100 mb-8">
         <div
           className="bg-orange-500 transition-all"
           style={{ width: `${forPct}%` }}
@@ -142,6 +187,26 @@ function VoteDistributionBar() {
           style={{ width: `${neutralPct}%` }}
         />
       </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {columns.map((col) => (
+          <div
+            key={col.label}
+            className="rounded-xl border border-gray-200/70 bg-gray-50/50 px-5 py-5 text-center"
+          >
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className={`h-2.5 w-2.5 rounded-full ${col.dotClass}`} />
+              <span className="text-sm font-medium text-gray-700">{col.label}</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 tabular-nums">
+              {col.percent}
+            </p>
+            <p className="mt-1 text-3xl font-bold text-gray-900 tabular-nums">
+              {col.count}
+            </p>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -150,34 +215,28 @@ function OverviewTab() {
   const mock = LIVE_CONSOLE_MOCK;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 pt-2">
       <section>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Recommended Action
-        </h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-5">Recommended Action</h3>
         <ol className="space-y-4">
           {mock.recommendedActions.map((action) => (
             <li
               key={action.step}
-              className="flex gap-4 rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm"
+              className="flex gap-4 rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
                 {action.step}
               </span>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">
-                  {action.title}
-                </h4>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {action.body}
-                </p>
+                <h4 className="font-semibold text-gray-900 mb-1">{action.title}</h4>
+                <p className="text-sm text-gray-600 leading-relaxed">{action.body}</p>
               </div>
             </li>
           ))}
         </ol>
       </section>
 
-      <section className="rounded-xl border border-red-200/80 bg-red-50/50 p-6">
+      <section className="rounded-2xl border border-red-200/80 bg-red-50/50 p-6 sm:p-8">
         <MonoLabel className="text-red-700 mb-3 block">Minority dissent</MonoLabel>
         <p className="text-sm sm:text-base text-gray-800 leading-relaxed">
           {mock.minorityDissent}
@@ -229,7 +288,7 @@ function OverviewTab() {
 function DebateTab({ messages }: { messages: SwarmMessageRecord[] }) {
   if (messages.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-16 text-center">
+      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 py-16 text-center">
         <p className="text-sm text-gray-500">
           No agent arguments yet. The swarm is still deliberating.
         </p>
@@ -238,11 +297,11 @@ function DebateTab({ messages }: { messages: SwarmMessageRecord[] }) {
   }
 
   return (
-    <ul className="space-y-4">
+    <ul className="space-y-4 pt-2">
       {messages.map((message, index) => (
         <li
           key={message.id}
-          className="rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm"
+          className="rounded-xl border border-gray-200/80 bg-white p-6 sm:p-7 shadow-sm"
         >
           <div className="flex items-center justify-between gap-3 mb-3">
             <span className="font-semibold text-orange-500">{message.role}</span>
@@ -261,10 +320,9 @@ function DebateTab({ messages }: { messages: SwarmMessageRecord[] }) {
 
 function PlaceholderTab({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20 text-center">
+    <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 py-20 text-center">
       <p className="text-sm text-gray-500">
-        <span className="font-semibold text-gray-700">{label}</span> — coming
-        soon
+        <span className="font-semibold text-gray-700">{label}</span> — coming soon
       </p>
     </div>
   );
@@ -278,37 +336,46 @@ export function EnterpriseLiveConsole({
 }: EnterpriseLiveConsoleProps) {
   const [activeTab, setActiveTab] = useState<ConsoleTabId>('overview');
   const mock = LIVE_CONSOLE_MOCK;
-
   const displayPremise = premise ?? mock.premise;
 
+  const statusLine = `${mock.statusLabel} • ${mock.sessionCode} • ${mock.sessionDate}`;
+
   return (
-    <div className="space-y-8 pb-16">
-      <header className="space-y-5 pt-2">
-        <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-orange-500">
-          {mock.statusLabel}
-        </span>
+    <div className="space-y-10 pb-20">
+      <TopActionBar />
+
+      <section className="rounded-2xl border border-orange-100/80 bg-gradient-to-br from-orange-50/50 to-white p-6 sm:p-10 shadow-sm">
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-orange-500 mb-5">
+          {statusLine}
+        </p>
+
         {loading && !premise ? (
           <TitleSkeleton />
         ) : (
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-gray-900 tracking-tight leading-[1.08] max-w-5xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-gray-900 tracking-tight leading-[1.08] max-w-5xl mb-10">
             {displayPremise}
           </h1>
         )}
-      </header>
 
-      <section className="rounded-xl border border-gray-200/80 bg-white p-6 sm:p-8 shadow-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
-          <div className="lg:col-span-8 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
+          <div className="lg:col-span-8 space-y-8">
             <div>
-              <MonoLabel className="text-orange-500 mb-3 block">Consensus</MonoLabel>
+              <MonoLabel className="text-orange-500 mb-4 block">Consensus</MonoLabel>
               {loading ? (
                 <ConsensusSkeleton />
               ) : managerText ? (
-                <blockquote className="text-lg sm:text-xl text-gray-800 leading-relaxed border-l-4 border-orange-500 pl-5 font-medium">
-                  {managerText}
-                </blockquote>
+                <div className="flex gap-4 border-l-4 border-orange-400/90 pl-5">
+                  <Quote
+                    size={28}
+                    className="text-orange-400 shrink-0 mt-0.5"
+                    aria-hidden
+                  />
+                  <blockquote className="text-lg sm:text-xl text-gray-800 leading-relaxed font-medium">
+                    {managerText}
+                  </blockquote>
+                </div>
               ) : (
-                <p className="text-sm text-gray-500 italic">
+                <p className="text-sm text-gray-500 italic pl-1">
                   Manager consensus is not available yet.
                 </p>
               )}
@@ -320,9 +387,9 @@ export function EnterpriseLiveConsole({
               <StatBox label="Cost" value={mock.stats.costCredits} unit="cr" />
             </div>
           </div>
-          <div className="lg:col-span-4 flex flex-col items-center justify-center border-t lg:border-t-0 lg:border-l border-gray-200/80 pt-8 lg:pt-0 lg:pl-8">
+          <div className="lg:col-span-4 flex flex-col items-center justify-center border-t lg:border-t-0 lg:border-l border-orange-100/80 pt-10 lg:pt-0 lg:pl-10">
             <ConfidenceRing value={mock.confidence} />
-            <p className="mt-4 text-center text-sm text-gray-600 max-w-[200px]">
+            <p className="mt-5 text-center text-sm text-gray-600 max-w-[220px] leading-relaxed">
               <span className="font-semibold text-gray-900">
                 {mock.agreementPercent}%
               </span>{' '}
@@ -332,7 +399,7 @@ export function EnterpriseLiveConsole({
         </div>
       </section>
 
-      <VoteDistributionBar />
+      <VoteDistributionSection />
 
       <nav
         className="flex flex-wrap gap-1 border-b border-gray-200"
@@ -345,7 +412,7 @@ export function EnterpriseLiveConsole({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+              className={`px-5 py-3.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
                 isActive
                   ? 'border-orange-500 text-orange-500'
                   : 'border-transparent text-gray-500 hover:text-gray-900'
@@ -366,7 +433,7 @@ export function EnterpriseLiveConsole({
         })}
       </nav>
 
-      <div className="pt-4">
+      <div className="pt-6">
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'evidence' && <PlaceholderTab label="Evidence" />}
         {activeTab === 'agents' && <PlaceholderTab label="Agents" />}

@@ -1,5 +1,7 @@
 export const LIVE_CONSOLE_MOCK = {
   statusLabel: 'CONSENSUS REACHED',
+  sessionCode: 'SWM_SEED_02',
+  sessionDate: 'May 29, 2026',
   premise:
     'Should we acquire Northwind Robotics at the $480M valuation, or wait for Q3 renewal proof?',
   managerVerdict:
@@ -14,8 +16,12 @@ export const LIVE_CONSOLE_MOCK = {
   agreementPercent: 56,
   votes: {
     for: 28,
+    forPercent: 56,
     against: 10,
+    againstPercent: 20,
     neutral: 12,
+    neutralPercent: 24,
+    totalAgents: 50,
   },
   recommendedActions: [
     {
