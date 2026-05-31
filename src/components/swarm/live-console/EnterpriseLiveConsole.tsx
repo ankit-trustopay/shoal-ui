@@ -17,6 +17,7 @@ import type { SwarmEvidenceRecord, SwarmMessageRecord } from '../../../lib/api';
 import { MonoLabel } from '../../ui/MonoLabel';
 import { AgentsTab } from './AgentsTab';
 import { EvidenceTab } from './EvidenceTab';
+import { SwarmDeliberatingBanner } from './SwarmDeliberatingBanner';
 import {
   formatCostCredits,
   votePercent,
@@ -25,6 +26,7 @@ import {
 
 interface EnterpriseLiveConsoleProps {
   loading: boolean;
+  isDeliberating?: boolean;
   premise: string | null;
   managerText: string | null;
   debateMessages: SwarmMessageRecord[];
@@ -343,6 +345,7 @@ function PlaceholderTab({ label }: { label: string }) {
 
 export function EnterpriseLiveConsole({
   loading,
+  isDeliberating = false,
   premise,
   managerText,
   debateMessages,
@@ -367,16 +370,23 @@ export function EnterpriseLiveConsole({
     return tab;
   });
 
+  const showDeliberating = isDeliberating || (loading && !managerText);
+  const showHeroSkeleton = showDeliberating && !managerText;
+
   return (
     <div className="space-y-10 pb-20">
       <TopActionBar />
+
+      {showDeliberating && <SwarmDeliberatingBanner />}
 
       <section className="rounded-2xl border border-orange-100/80 bg-gradient-to-br from-orange-50/50 to-white p-6 sm:p-10 shadow-sm">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-orange-500 mb-5">
           {statusLine}
         </p>
 
-        {loading && !premise ? (
+        {showHeroSkeleton && !premise ? (
+          <TitleSkeleton />
+        ) : loading && !premise ? (
           <TitleSkeleton />
         ) : (
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-gray-900 tracking-tight leading-[1.08] max-w-5xl mb-10">
@@ -388,7 +398,7 @@ export function EnterpriseLiveConsole({
           <div className="lg:col-span-8 space-y-8">
             <div>
               <MonoLabel className="text-orange-500 mb-4 block">Consensus</MonoLabel>
-              {loading ? (
+              {showHeroSkeleton || (loading && !managerText) ? (
                 <ConsensusSkeleton />
               ) : managerText ? (
                 <div className="flex gap-4 border-l-4 border-orange-400/90 pl-5">
@@ -422,7 +432,9 @@ export function EnterpriseLiveConsole({
             </div>
           </div>
           <div className="lg:col-span-4 flex flex-col items-center justify-center border-t lg:border-t-0 lg:border-l border-orange-100/80 pt-10 lg:pt-0 lg:pl-10">
-            <ConfidenceRing value={stats.confidence} />
+            <ConfidenceRing
+              value={showDeliberating && stats.confidence === 0 ? 0 : stats.confidence}
+            />
             <p className="mt-5 text-center text-sm text-gray-600 max-w-[220px] leading-relaxed">
               <span className="font-semibold text-gray-900">
                 {stats.agreementPercent}%
@@ -470,10 +482,16 @@ export function EnterpriseLiveConsole({
       <div className="pt-6">
         {activeTab === 'overview' && <OverviewTab stats={stats} />}
         {activeTab === 'evidence' && (
-          <EvidenceTab evidence={evidence} loading={loading} />
+          <EvidenceTab
+            evidence={evidence}
+            loading={showDeliberating || loading}
+          />
         )}
         {activeTab === 'agents' && (
-          <AgentsTab agentProfiles={agentProfiles} loading={loading} />
+          <AgentsTab
+            agentProfiles={agentProfiles}
+            loading={showDeliberating || loading}
+          />
         )}
         {activeTab === 'debate' && <DebateTab messages={debateMessages} />}
         {activeTab === 'cost' && <PlaceholderTab label="Cost" />}

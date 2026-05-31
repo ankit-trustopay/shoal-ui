@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageContainer } from '../components/ui/PageContainer';
 import { EnterpriseLiveConsole } from '../components/swarm/live-console/EnterpriseLiveConsole';
 import { deriveSwarmStats } from '../components/swarm/live-console/swarmStats';
+import { useSwarmPolling } from '../hooks/useSwarmPolling';
 import { parseAgentProfiles } from '../lib/agentProfiles';
-import { API_BASE, type SwarmRecord } from '../lib/api';
+import { isSwarmFailed } from '../lib/swarmReady';
 
 function SwarmError({ message }: { message: string }) {
   return (
@@ -21,82 +22,8 @@ export function LiveSwarm() {
   const [searchParams] = useSearchParams();
   const swarmId = searchParams.get('swarmId');
 
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [swarm, setSwarm] = useState<SwarmRecord | null>(null);
-
-  useEffect(() => {
-    if (!swarmId) {
-      setLoading(false);
-      setFetchError('Missing swarmId in URL');
-      setSwarm(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadSwarm() {
-      setLoading(true);
-      setFetchError(null);
-      setSwarm(null);
-
-      console.log('Fetching swarm ID:', swarmId);
-
-      try {
-        const url = `${API_BASE}/api/swarms/${encodeURIComponent(swarmId)}`;
-        const res = await fetch(url);
-
-        if (!res.ok) {
-          let errorBody = '';
-          try {
-            const json = (await res.json()) as { error?: string };
-            errorBody = json.error ?? JSON.stringify(json);
-          } catch {
-            errorBody = await res.text().catch(() => res.statusText);
-          }
-
-          console.error(
-            'Swarm fetch failed:',
-            res.status,
-            res.statusText,
-            errorBody,
-          );
-
-          throw new Error(
-            `HTTP ${res.status} ${res.statusText}${errorBody ? ` — ${errorBody}` : ''}`,
-          );
-        }
-
-        const data = (await res.json()) as SwarmRecord;
-
-        if (!data.premise) {
-          throw new Error('Swarm data is missing premise');
-        }
-
-        if (!cancelled) {
-          setSwarm(data);
-        }
-      } catch (err) {
-        if (cancelled) return;
-
-        console.error('Swarm fetch error:', err);
-        setFetchError(
-          err instanceof Error ? err.message : 'Unknown error loading swarm',
-        );
-        setSwarm(null);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadSwarm();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [swarmId]);
+  const { swarm, initialLoading, isPolling, fetchError } =
+    useSwarmPolling(swarmId);
 
   const managerMessage = useMemo(() => {
     return swarm?.messages?.find((m) => m.role === 'Manager') ?? null;
@@ -119,6 +46,10 @@ export function LiveSwarm() {
     return `SWM_${compact.slice(0, 8) || 'SEED'}`;
   }, [swarmId]);
 
+  const deliberating = isPolling && !fetchError;
+  const showFailed =
+    swarm != null && isSwarmFailed(swarm) && !managerMessage && !fetchError;
+
   if (!swarmId) {
     return (
       <PageContainer width="full" className="py-6 md:py-10">
@@ -127,7 +58,7 @@ export function LiveSwarm() {
     );
   }
 
-  if (fetchError) {
+  if (fetchError && !swarm) {
     return (
       <PageContainer width="full" className="py-6 md:py-10">
         <SwarmError message={fetchError} />
@@ -137,8 +68,19 @@ export function LiveSwarm() {
 
   return (
     <PageContainer width="full" className="py-6 md:py-10">
+      {fetchError && swarm && (
+        <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          {fetchError}
+        </p>
+      )}
+      {showFailed && (
+        <p className="mb-4 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          Swarm processing failed on the server. Try igniting a new swarm.
+        </p>
+      )}
       <EnterpriseLiveConsole
-        loading={loading}
+        loading={initialLoading}
+        isDeliberating={deliberating}
         premise={swarm?.premise ?? null}
         managerText={managerMessage?.text ?? null}
         debateMessages={debateMessages}
