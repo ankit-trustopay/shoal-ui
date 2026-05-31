@@ -10,8 +10,8 @@ import {
   XIcon,
 } from 'lucide-react';
 import { createSwarm } from '../lib/api';
+import { useUserAccount } from '../hooks/useUserAccount';
 import {
-  CURRENT_BILLING_PLAN_ID,
   saasPlans,
   type SaasPlanId,
 } from '../data/creditsBilling';
@@ -60,7 +60,6 @@ const planRank: Record<SaasPlanId, number> = {
   business: 2,
   enterprise: 3,
 };
-const CURRENT_USER_PLAN: SaasPlanId = CURRENT_BILLING_PLAN_ID;
 
 const PLAN_AGENT_MAX = Object.fromEntries(
   saasPlans.map((tier) => [tier.id, tier.maxAgentsPerTask]),
@@ -73,14 +72,15 @@ const PLAN_AGENT_DEFAULT: Record<SaasPlanId, number> = {
   enterprise: 2000,
 };
 
-function isAccessible(p: Plan) {
-  return planRank[p.requiredPlan] <= planRank[CURRENT_USER_PLAN];
+function isAccessible(p: Plan, userPlanId: SaasPlanId) {
+  return planRank[p.requiredPlan] <= planRank[userPlanId];
 }
 function truncate(text: string, max = 70) {
   return text.length > max ? text.slice(0, max).trimEnd() + '...' : text;
 }
 export function NewSwarm() {
   const navigate = useNavigate();
+  const { credits, planId: userPlanId, refresh } = useUserAccount();
   const [searchParams] = useSearchParams();
   const [prompt, setPrompt] = useState('');
   const [planId, setPlanId] = useState<Plan['id']>('free');
@@ -97,6 +97,8 @@ export function NewSwarm() {
   const activePlan = plans.find((p) => p.id === planId) ?? plans[0];
   const ActiveIcon = activePlan.icon;
   const maxAgents = PLAN_AGENT_MAX[planId];
+  const insufficientCredits = agentCount > credits;
+  const canIgnite = prompt.trim().length > 0 && !isIgniting && !insufficientCredits;
 
   useEffect(() => {
     const query = searchParams.get('query');
@@ -124,13 +126,14 @@ export function NewSwarm() {
 
   const handleIgniteSwarm = useCallback(async () => {
     const premise = prompt.trim();
-    if (!premise || isIgniting) return;
+    if (!premise || isIgniting || agentCount > credits) return;
 
     setIsIgniting(true);
     setIgniteError(null);
 
     try {
       const { swarmId } = await createSwarm({ premise, agentCount });
+      await refresh();
       navigate(`/app/live?swarmId=${encodeURIComponent(swarmId)}`);
     } catch (err) {
       setIgniteError(
@@ -139,7 +142,7 @@ export function NewSwarm() {
     } finally {
       setIsIgniting(false);
     }
-  }, [prompt, agentCount, isIgniting, navigate]);
+  }, [prompt, agentCount, credits, isIgniting, navigate, refresh]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -224,8 +227,15 @@ export function NewSwarm() {
               className="w-full h-1.5 accent-axiom cursor-pointer disabled:opacity-50"
             />
             <p className="mt-2 text-xs text-gray-500">
-              Up to {maxAgents.toLocaleString()} agents on {activePlan.name}
+              Up to {maxAgents.toLocaleString()} agents on {activePlan.name} ·{' '}
+              {credits.toLocaleString()} credits available
             </p>
+            {insufficientCredits && (
+              <p className="mt-2 text-xs font-medium text-red-600">
+                This swarm costs {agentCount.toLocaleString()} credits — you have{' '}
+                {credits.toLocaleString()}.
+              </p>
+            )}
           </div>
 
           {igniteError &&
@@ -375,7 +385,7 @@ export function NewSwarm() {
                       {plans.map((plan) => {
                       const Icon = plan.icon;
                       const isSelected = plan.id === planId;
-                      const accessible = isAccessible(plan);
+                      const accessible = isAccessible(plan, userPlanId);
                       return (
                         <button
                           key={plan.id}
@@ -447,10 +457,14 @@ export function NewSwarm() {
               <button
                 type="button"
                 onClick={() => void handleIgniteSwarm()}
-                disabled={!prompt.trim() || isIgniting}
+                disabled={!canIgnite}
                 className="inline-flex items-center gap-1.5 bg-axiom text-white rounded-full px-4 py-2 text-sm font-semibold hover:bg-orange-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-                {isIgniting ? 'Igniting...' : 'Ignite Swarm'}
-                {!isIgniting && <ArrowUpIcon size={14} />}
+                {isIgniting
+                  ? 'Igniting...'
+                  : insufficientCredits
+                    ? 'Insufficient Credits - Upgrade Plan'
+                    : 'Ignite Swarm'}
+                {!isIgniting && !insufficientCredits && <ArrowUpIcon size={14} />}
               </button>
             </div>
           </div>

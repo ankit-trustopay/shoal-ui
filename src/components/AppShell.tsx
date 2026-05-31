@@ -11,10 +11,8 @@ import {
   BookOpenIcon,
   PlusIcon,
 } from 'lucide-react';
-import {
-  FREE_TIER_AVAILABLE_CREDITS,
-  FREE_TIER_SIDEBAR_LABEL,
-} from '../data/creditsBilling';
+import { UserAccountProvider, useUserAccount } from '../hooks/useUserAccount';
+import { formatPlanLabel } from '../lib/planLabels';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -27,11 +25,14 @@ const navItems = [
   { name: 'Settings', path: '/app/settings', icon: SettingsIcon },
 ];
 
-export function AppShell({ children }: AppShellProps) {
+function AppShellSidebar({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const { user } = useUser();
+  const { credits, plan, loading } = useUserAccount();
   const displayName =
     user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? 'Account';
+  const planLabel = formatPlanLabel(plan);
+  const creditsLabel = loading ? '…' : credits.toLocaleString();
 
   return (
     <div className="flex h-screen bg-[#FAFAFA]">
@@ -83,7 +84,7 @@ export function AppShell({ children }: AppShellProps) {
                 {displayName}
               </p>
               <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mt-0.5">
-                {FREE_TIER_SIDEBAR_LABEL} · {FREE_TIER_AVAILABLE_CREDITS} cr
+                {planLabel} · {creditsLabel} cr
               </p>
             </div>
             <UserButton
@@ -100,7 +101,7 @@ export function AppShell({ children }: AppShellProps) {
             className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-axiom text-white px-3 py-2 text-xs font-semibold hover:bg-orange-600 transition-colors"
           >
             <PlusIcon size={12} aria-hidden />
-            Add credits
+            Buy Credits
           </Link>
         </div>
       </aside>
@@ -122,5 +123,13 @@ export function AppShell({ children }: AppShellProps) {
         </main>
       </div>
     </div>
+  );
+}
+
+export function AppShell({ children }: AppShellProps) {
+  return (
+    <UserAccountProvider>
+      <AppShellSidebar>{children}</AppShellSidebar>
+    </UserAccountProvider>
   );
 }

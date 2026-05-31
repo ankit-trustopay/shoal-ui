@@ -1,22 +1,10 @@
-import React, { useState } from 'react';
-import { PlusIcon } from 'lucide-react';
+import React from 'react';
+import { CoinsIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MonoLabel } from '../ui/MonoLabel';
 import { creditTopUpPacks } from '../../data/creditsBilling';
 
-interface BuyExtraCreditsPanelProps {
-  onPurchase?: (credits: number) => void;
-}
-
-export function BuyExtraCreditsPanel({ onPurchase }: BuyExtraCreditsPanelProps) {
-  const [pendingId, setPendingId] = useState<string | null>(null);
-
-  const purchase = (packId: string, credits: number) => {
-    setPendingId(packId);
-    onPurchase?.(credits);
-    window.setTimeout(() => setPendingId(null), 500);
-  };
-
+export function BuyExtraCreditsPanel() {
   return (
     <section
       id="buy-extra-credits"
@@ -27,12 +15,11 @@ export function BuyExtraCreditsPanel({ onPurchase }: BuyExtraCreditsPanelProps) 
         Buy extra credits
       </h2>
       <p className="text-sm text-gray-600 mb-6 max-w-xl">
-        One-time packs add to your balance instantly. Credits never expire.
+        One-time packs add to your balance instantly. Stripe checkout coming soon.
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {creditTopUpPacks.map((pack, index) => {
-          const isPending = pendingId === pack.id;
           const isPopular = index === 1;
 
           return (
@@ -60,12 +47,10 @@ export function BuyExtraCreditsPanel({ onPurchase }: BuyExtraCreditsPanelProps) 
               <p className="text-sm text-gray-600 mt-1 mb-4">${pack.price}</p>
               <button
                 type="button"
-                disabled={isPending}
-                onClick={() => purchase(pack.id, pack.credits)}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-black transition-colors disabled:opacity-60"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-black transition-colors"
               >
-                <PlusIcon size={14} aria-hidden />
-                {isPending ? 'Processing…' : 'Add to balance'}
+                <CoinsIcon size={14} aria-hidden />
+                Buy Credits
               </button>
             </motion.div>
           );

@@ -91,6 +91,29 @@ export interface ApiErrorBody {
   error?: string;
 }
 
+export interface UserAccount {
+  credits: number;
+  plan: string;
+}
+
+export async function getUserAccount(): Promise<UserAccount> {
+  const res = await fetch(`${API_BASE}/api/user/me`, {
+    headers: await buildAuthHeaders(),
+  });
+
+  const data = (await res.json()) as UserAccount & ApiErrorBody;
+
+  if (!res.ok) {
+    throw new Error(data.error ?? "Failed to load account");
+  }
+
+  if (typeof data.credits !== "number" || typeof data.plan !== "string") {
+    throw new Error("Invalid account response");
+  }
+
+  return { credits: data.credits, plan: data.plan };
+}
+
 export async function createSwarm(
   payload: CreateSwarmPayload,
 ): Promise<CreateSwarmResponse> {

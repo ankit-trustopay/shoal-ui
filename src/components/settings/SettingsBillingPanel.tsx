@@ -1,12 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CreditCardIcon } from 'lucide-react';
-import {
-  DAILY_FREE_CREDITS_TOTAL,
-  FREE_TIER_AVAILABLE_CREDITS,
-  FREE_TIER_PLAN_LABEL,
-  getCurrentSaasPlan,
-} from '../../data/creditsBilling';
+import { useUserAccount } from '../../hooks/useUserAccount';
+import { formatPlanTierLabel } from '../../lib/planLabels';
+import { saasPlans } from '../../data/creditsBilling';
 import type { SettingsTabId } from '../../data/settings';
 import { BentoCard } from '../ui/BentoCard';
 import { MonoLabel } from '../ui/MonoLabel';
@@ -16,7 +13,8 @@ interface SettingsBillingPanelProps {
 }
 
 export function SettingsBillingPanel({ onChangePlan }: SettingsBillingPanelProps) {
-  const current = getCurrentSaasPlan();
+  const { credits, plan, planId, loading } = useUserAccount();
+  const currentTier = saasPlans.find((tier) => tier.id === planId) ?? saasPlans[0];
 
   return (
     <div className="max-w-3xl">
@@ -24,11 +22,12 @@ export function SettingsBillingPanel({ onChangePlan }: SettingsBillingPanelProps
         <div>
           <MonoLabel className="mb-1 block">Current plan</MonoLabel>
           <div className="text-2xl font-bold text-black tracking-tight">
-            {FREE_TIER_PLAN_LABEL}
+            {loading ? '…' : formatPlanTierLabel(plan)}
           </div>
           <div className="text-sm text-gray-600 mt-1">
-            {current.price}
-            {current.period} · No paid subscription active
+            {currentTier.price}
+            {currentTier.period}
+            {planId === 'free' ? ' · No paid subscription active' : ' · Active subscription'}
           </div>
         </div>
         <button
@@ -45,18 +44,14 @@ export function SettingsBillingPanel({ onChangePlan }: SettingsBillingPanelProps
           <h2 className="font-bold text-black tracking-tight">Available credits</h2>
           <span className="font-mono text-sm text-gray-600 tabular-nums">
             <span className="text-black font-semibold">
-              {FREE_TIER_AVAILABLE_CREDITS.toLocaleString()}
+              {loading ? '…' : credits.toLocaleString()}
             </span>{' '}
             credits
           </span>
         </div>
         <p className="text-sm text-gray-600 leading-relaxed">
-          Free Plan includes{' '}
-          <span className="font-semibold text-black">
-            {DAILY_FREE_CREDITS_TOTAL} daily credits
-          </span>{' '}
-          (1 credit per virtual human). Usage is mocked at{' '}
-          {FREE_TIER_AVAILABLE_CREDITS} credits until backend billing is connected.
+          Your ledger balance is synced from the database. Each virtual human in a
+          swarm costs exactly 1 credit at ignition.
         </p>
         <Link
           to="/app/credits"

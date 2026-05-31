@@ -5,11 +5,12 @@ import { MonoLabel } from '../ui/MonoLabel';
 import { cn } from '../../lib/cn';
 import {
   billingTiers,
-  CURRENT_BILLING_PLAN_ID,
   type BillingTier,
+  type SaasPlanId,
 } from '../../data/creditsBilling';
 
 interface PricingTierCardsProps {
+  currentPlanId?: SaasPlanId;
   onUpgrade?: (tier: BillingTier) => void;
 }
 
@@ -26,11 +27,14 @@ function tierCardClass(tier: BillingTier, isCurrent: boolean): string {
   return 'border border-gray-200/80 bg-white shadow-bento hover:shadow-bento-hover';
 }
 
-export function PricingTierCards({ onUpgrade }: PricingTierCardsProps) {
+export function PricingTierCards({
+  currentPlanId = 'free',
+  onUpgrade,
+}: PricingTierCardsProps) {
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const handleUpgrade = (tier: BillingTier) => {
-    if (tier.id === CURRENT_BILLING_PLAN_ID) return;
+    if (tier.id === currentPlanId) return;
     setPendingId(tier.id);
     onUpgrade?.(tier);
     window.setTimeout(() => setPendingId(null), 600);
@@ -55,7 +59,7 @@ export function PricingTierCards({ onUpgrade }: PricingTierCardsProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
         {billingTiers.map((tier) => {
           const Icon = tier.icon;
-          const isCurrent = tier.id === CURRENT_BILLING_PLAN_ID;
+          const isCurrent = tier.id === currentPlanId;
           const isDark = tier.highlight === 'enterprise';
           const isPending = pendingId === tier.id;
 

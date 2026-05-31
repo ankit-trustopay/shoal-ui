@@ -9,18 +9,18 @@ import { BuyExtraCreditsPanel } from '../components/credits/BuyExtraCreditsPanel
 import { CreditsUsageTable } from '../components/credits/CreditsUsageTable';
 import { HowCreditsWorkSection } from '../components/credits/HowCreditsWorkSection';
 import { BentoCard } from '../components/ui/BentoCard';
-import {
-  FREE_TIER_AVAILABLE_CREDITS,
-  type BillingTier,
-} from '../data/creditsBilling';
+import { useUserAccount } from '../hooks/useUserAccount';
+import { formatPlanLabel } from '../lib/planLabels';
 import { listSwarms, type SwarmHistoryListItem } from '../lib/api';
+import type { BillingTier } from '../data/creditsBilling';
 
 export function Credits() {
   const buySectionRef = useRef<HTMLDivElement>(null);
-  const [balance, setBalance] = useState(FREE_TIER_AVAILABLE_CREDITS);
+  const { credits, plan, planId, loading: accountLoading, error: accountError } =
+    useUserAccount();
   const [swarms, setSwarms] = useState<SwarmHistoryListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [usageLoading, setUsageLoading] = useState(true);
+  const [usageError, setUsageError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; key: number } | null>(null);
 
   const flashToast = useCallback((msg: string) => {
@@ -32,8 +32,8 @@ export function Credits() {
     let cancelled = false;
 
     async function load() {
-      setLoading(true);
-      setError(null);
+      setUsageLoading(true);
+      setUsageError(null);
       try {
         const data = await listSwarms();
         if (!cancelled) {
@@ -41,14 +41,14 @@ export function Credits() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(
+          setUsageError(
             err instanceof Error ? err.message : 'Failed to load usage history',
           );
           setSwarms([]);
         }
       } finally {
         if (!cancelled) {
-          setLoading(false);
+          setUsageLoading(false);
         }
       }
     }
@@ -61,11 +61,6 @@ export function Credits() {
 
   const scrollToBuyExtra = () => {
     buySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const handleTopUp = (credits: number) => {
-    setBalance((b) => b + credits);
-    flashToast(`+${credits.toLocaleString()} credits added to balance`);
   };
 
   const handleUpgrade = (tier: BillingTier) => {
@@ -98,18 +93,29 @@ export function Credits() {
         className="mb-8"
       />
 
+      {accountError && (
+        <BentoCard className="mb-6 rounded-2xl border-red-200 bg-red-50 p-5">
+          <p className="text-sm font-semibold text-red-800">{accountError}</p>
+        </BentoCard>
+      )}
+
       <div className="mb-10 md:mb-12">
-        <CreditsBalanceHero onBuyExtra={scrollToBuyExtra} balance={balance} />
+        <CreditsBalanceHero
+          balance={credits}
+          planLabel={formatPlanLabel(plan)}
+          loading={accountLoading}
+          onBuyExtra={scrollToBuyExtra}
+        />
       </div>
 
       <HowCreditsWorkSection />
 
       <div className="mb-10 md:mb-14">
-        <PricingTierCards onUpgrade={handleUpgrade} />
+        <PricingTierCards currentPlanId={planId} onUpgrade={handleUpgrade} />
       </div>
 
       <div ref={buySectionRef} className="mb-10 md:mb-14">
-        <BuyExtraCreditsPanel onPurchase={handleTopUp} />
+        <BuyExtraCreditsPanel />
       </div>
 
       <section className="mb-4" aria-labelledby="recent-usage-heading">
@@ -123,13 +129,13 @@ export function Credits() {
           Credit draws from your latest swarms via the live API.
         </p>
 
-        {error && (
+        {usageError && (
           <BentoCard className="mb-6 rounded-2xl border-red-200 bg-red-50 p-5">
-            <p className="text-sm font-semibold text-red-800">{error}</p>
+            <p className="text-sm font-semibold text-red-800">{usageError}</p>
           </BentoCard>
         )}
 
-        <CreditsUsageTable swarms={swarms} loading={loading} />
+        <CreditsUsageTable swarms={swarms} loading={usageLoading} />
       </section>
     </PageContainer>
   );

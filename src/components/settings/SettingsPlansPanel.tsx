@@ -1,19 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckIcon } from 'lucide-react';
-import {
-  settingsPlans,
-  CURRENT_PLAN_ID,
-  getCurrentPlan,
-  type SettingsPlan,
-} from '../../data/settings';
-import { FREE_TIER_PLAN_LABEL } from '../../data/creditsBilling';
+import { settingsPlans, type SettingsPlan } from '../../data/settings';
+import { useUserAccount } from '../../hooks/useUserAccount';
+import { formatPlanTierLabel } from '../../lib/planLabels';
+import { saasPlans } from '../../data/creditsBilling';
 import { cn } from '../../lib/cn';
 import { BentoCard } from '../ui/BentoCard';
 import { MonoLabel } from '../ui/MonoLabel';
 
 export function SettingsPlansPanel() {
-  const current = getCurrentPlan();
+  const { credits, plan, planId, loading } = useUserAccount();
+  const currentTier = saasPlans.find((tier) => tier.id === planId) ?? saasPlans[0];
 
   return (
     <div>
@@ -21,14 +19,19 @@ export function SettingsPlansPanel() {
         <div>
           <MonoLabel className="mb-1 block">Current plan</MonoLabel>
           <div className="text-2xl font-bold text-black tracking-tight">
-            {current.id === 'free' ? FREE_TIER_PLAN_LABEL : current.name}
+            {loading ? '…' : formatPlanTierLabel(plan)}
           </div>
           <div className="text-sm text-gray-600 mt-1">
-            {current.price}
-            {current.period}
-            {current.id === 'free'
+            {currentTier.price}
+            {currentTier.period}
+            {planId === 'free'
               ? ' · No renewal required'
               : ' · Billing connects at checkout'}
+            {!loading && (
+              <span className="block mt-1 tabular-nums">
+                {credits.toLocaleString()} credits available
+              </span>
+            )}
           </div>
         </div>
         <Link
@@ -47,24 +50,31 @@ export function SettingsPlansPanel() {
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {settingsPlans.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} />
+        {settingsPlans.map((tier) => (
+          <PlanCard key={tier.id} plan={tier} currentPlanId={planId} />
         ))}
       </div>
     </div>
   );
 }
 
-function PlanCard({ plan }: { plan: SettingsPlan }) {
+function PlanCard({
+  plan,
+  currentPlanId,
+}: {
+  plan: SettingsPlan;
+  currentPlanId: string;
+}) {
   const Icon = plan.icon;
-  const isCurrent = plan.id === CURRENT_PLAN_ID;
+  const isCurrent = plan.id === currentPlanId;
   const planRank: Record<SettingsPlan['id'], number> = {
     free: 0,
     pro: 1,
     business: 2,
     enterprise: 3,
   };
-  const isUpgrade = planRank[plan.id] > planRank[CURRENT_PLAN_ID];
+  const isUpgrade =
+    planRank[plan.id] > planRank[currentPlanId as SettingsPlan['id']];
 
   return (
     <BentoCard
