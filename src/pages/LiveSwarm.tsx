@@ -87,6 +87,9 @@ export function LiveSwarm() {
         debateMessages={debateMessages}
         agentProfiles={agentProfiles}
         evidence={swarm?.evidence ?? []}
+        resultData={swarm?.resultData ?? null}
+        status={swarm?.status ?? null}
+        createdAt={swarm?.createdAt ?? null}
         stats={swarmStats}
         sessionCode={sessionCode}
       />

@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ExternalLink, Quote } from 'lucide-react';
-import {
-  CONSOLE_TABS,
-  LIVE_CONSOLE_MOCK,
-  type ConsoleTabId,
-} from '../../../data/liveConsoleMock';
+import { CONSOLE_TABS, type ConsoleTabId } from '../../../data/liveConsoleMock';
 import type { AgentProfile } from '../../../lib/agentProfiles';
-import type { SwarmEvidenceRecord, SwarmMessageRecord } from '../../../lib/api';
+import type {
+  SwarmEvidenceRecord,
+  SwarmMessageRecord,
+  SwarmStatus,
+} from '../../../lib/api';
+import { parseSwarmOverview } from '../../../lib/swarmOverview';
 import { MonoLabel } from '../../ui/MonoLabel';
 import { AgentsTab } from './AgentsTab';
 import { EvidenceTab } from './EvidenceTab';
@@ -28,8 +29,33 @@ interface EnterpriseLiveConsoleProps {
   debateMessages: SwarmMessageRecord[];
   agentProfiles: AgentProfile[];
   evidence: SwarmEvidenceRecord[];
+  resultData: unknown;
+  status: SwarmStatus | null;
+  createdAt: string | null;
   stats: SwarmConsoleStats;
   sessionCode: string;
+}
+
+function formatSessionDate(iso: string | null): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function formatStatusLabel(
+  status: SwarmStatus | null,
+  hasConsensus: boolean,
+): string {
+  if (status === 'FAILED') return 'SWARM FAILED';
+  if (status === 'RUNNING' || status === 'PENDING') return 'DELIBERATING';
+  if (hasConsensus) return 'CONSENSUS REACHED';
+  if (status === 'COMPLETED') return 'SWARM COMPLETE';
+  return 'SWARM SESSION';
 }
 
 function ConfidenceRing({ value }: { value: number }) {
@@ -189,76 +215,111 @@ function VoteDistributionSection({ stats }: { stats: SwarmConsoleStats }) {
   );
 }
 
-function OverviewTab({ stats }: { stats: SwarmConsoleStats }) {
-  const mock = LIVE_CONSOLE_MOCK;
+function OverviewTab({
+  stats,
+  evidence,
+  resultData,
+}: {
+  stats: SwarmConsoleStats;
+  evidence: SwarmEvidenceRecord[];
+  resultData: unknown;
+}) {
+  const { recommendedActions, minorityDissent } = useMemo(
+    () => parseSwarmOverview(resultData),
+    [resultData],
+  );
+
+  const hasActions = recommendedActions.length > 0;
+  const hasDissent = minorityDissent !== null;
+  const hasEvidence = evidence.length > 0;
+
+  if (!hasActions && !hasDissent && !hasEvidence) {
+    return (
+      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 py-16 px-6 text-center">
+        <p className="text-sm text-gray-600 max-w-md mx-auto leading-relaxed">
+          Consensus and vote distribution are shown above. Recommended actions,
+          dissent summaries, and ranked evidence will appear here when provided
+          for this swarm.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10 pt-2">
-      <section>
-        <h3 className="text-lg font-bold text-gray-900 mb-5">Recommended Action</h3>
-        <ol className="space-y-4">
-          {mock.recommendedActions.map((action) => (
-            <li
-              key={action.step}
-              className="flex gap-4 rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
-                {action.step}
-              </span>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-1">{action.title}</h4>
-                <p className="text-sm text-gray-600 leading-relaxed">{action.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="rounded-2xl border border-red-200/80 bg-red-50/50 p-6 sm:p-8">
-        <MonoLabel className="text-red-700 mb-3 block">Minority dissent</MonoLabel>
-        <p className="text-sm sm:text-base text-gray-800 leading-relaxed">
-          {mock.minorityDissent}
-        </p>
-        <p className="mt-3 font-mono text-xs text-red-700/80">
-          {stats.votesAgainst} agents · dissenting view
-        </p>
-      </section>
-
-      <section>
-        <div className="flex items-center justify-between gap-4 mb-5">
-          <h3 className="text-lg font-bold text-gray-900">Top Evidence</h3>
-          <span className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
-            Ranked by swarm weight
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {mock.evidence.map((item) => (
-            <a
-              key={item.id}
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm hover:border-orange-300 hover:shadow-md transition-all"
-            >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-orange-500">
-                  {item.source}
+      {hasActions && (
+        <section>
+          <h3 className="text-lg font-bold text-gray-900 mb-5">Recommended Action</h3>
+          <ol className="space-y-4">
+            {recommendedActions.map((action) => (
+              <li
+                key={`${action.step}-${action.title}`}
+                className="flex gap-4 rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
+                  {action.step}
                 </span>
-                <ExternalLink
-                  size={14}
-                  className="text-gray-400 group-hover:text-orange-500 shrink-0"
-                />
-              </div>
-              <h4 className="font-semibold text-gray-900 text-sm mb-2 leading-snug">
-                {item.title}
-              </h4>
-              <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                {item.excerpt}
-              </p>
-            </a>
-          ))}
-        </div>
-      </section>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">{action.title}</h4>
+                  <p className="text-sm text-gray-600 leading-relaxed">{action.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {hasDissent && (
+        <section className="rounded-2xl border border-red-200/80 bg-red-50/50 p-6 sm:p-8">
+          <MonoLabel className="text-red-700 mb-3 block">Minority dissent</MonoLabel>
+          <p className="text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-line">
+            {minorityDissent}
+          </p>
+          {stats.votesAgainst > 0 && (
+            <p className="mt-3 font-mono text-xs text-red-700/80">
+              {stats.votesAgainst.toLocaleString()} agents · dissenting view
+            </p>
+          )}
+        </section>
+      )}
+
+      {hasEvidence && (
+        <section>
+          <div className="flex items-center justify-between gap-4 mb-5">
+            <h3 className="text-lg font-bold text-gray-900">Top Evidence</h3>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
+              From swarm research
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {evidence.map((item) => (
+              <a
+                key={item.id}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm hover:border-orange-300 hover:shadow-md transition-all"
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-orange-500">
+                    {item.source}
+                  </span>
+                  <ExternalLink
+                    size={14}
+                    className="text-gray-400 group-hover:text-orange-500 shrink-0"
+                  />
+                </div>
+                <h4 className="font-semibold text-gray-900 text-sm mb-2 leading-snug">
+                  {item.title}
+                </h4>
+                <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                  {item.snippet}
+                </p>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -315,15 +376,20 @@ export function EnterpriseLiveConsole({
   debateMessages,
   agentProfiles,
   evidence,
+  resultData,
+  status,
+  createdAt,
   stats,
   sessionCode,
 }: EnterpriseLiveConsoleProps) {
   const [activeTab, setActiveTab] = useState<ConsoleTabId>('overview');
   const { toastMessage, showToast } = useConsoleToast();
-  const mock = LIVE_CONSOLE_MOCK;
-  const displayPremise = premise ?? mock.premise;
 
-  const statusLine = `${mock.statusLabel} • ${sessionCode} • ${mock.sessionDate}`;
+  const sessionDate = formatSessionDate(createdAt);
+  const statusLabel = formatStatusLabel(status, Boolean(managerText));
+  const statusLine = [statusLabel, sessionCode, sessionDate]
+    .filter(Boolean)
+    .join(' • ');
 
   const tabs = CONSOLE_TABS.map((tab) => {
     if (tab.id === 'evidence' && evidence.length > 0) {
@@ -343,7 +409,7 @@ export function EnterpriseLiveConsole({
       <ConsoleToast message={toastMessage} />
       <LiveConsoleActionBar
         swarmId={swarmId}
-        premise={displayPremise}
+        premise={premise ?? ''}
         managerText={managerText}
         stats={stats}
         sessionCode={sessionCode}
@@ -364,7 +430,7 @@ export function EnterpriseLiveConsole({
           <TitleSkeleton />
         ) : (
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-gray-900 tracking-tight leading-[1.08] max-w-5xl mb-10">
-            {displayPremise}
+            {premise}
           </h1>
         )}
 
@@ -454,7 +520,13 @@ export function EnterpriseLiveConsole({
       </nav>
 
       <div className="pt-6">
-        {activeTab === 'overview' && <OverviewTab stats={stats} />}
+        {activeTab === 'overview' && (
+          <OverviewTab
+            stats={stats}
+            evidence={evidence}
+            resultData={resultData}
+          />
+        )}
         {activeTab === 'evidence' && (
           <EvidenceTab
             evidence={evidence}
