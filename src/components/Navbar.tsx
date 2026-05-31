@@ -52,12 +52,12 @@ export function Navbar() {
 
           <div className="hidden md:flex items-center space-x-6">
             <Link
-              to="/signin"
+              to="/sign-in"
               className="text-sm font-medium text-black hover:text-gray-500 transition-colors">
               
               Sign In
             </Link>
-            <Button variant="primary" href="/signup">
+            <Button variant="primary" href="/sign-up">
               Get Started
             </Button>
           </div>
@@ -87,13 +87,13 @@ export function Navbar() {
               </NavLink>
           )}
             <Link
-            to="/signin"
+            to="/sign-in"
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-medium text-black">
             
               Sign In
             </Link>
-            <Button variant="primary" href="/signup" fullWidth>
+            <Button variant="primary" href="/sign-up" fullWidth>
               Get Started
             </Button>
           </div>

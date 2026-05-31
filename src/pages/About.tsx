@@ -103,7 +103,7 @@ export function About() {
         <p className="text-lg text-gray-600 mb-10 max-w-xl mx-auto">
           See what a synthetic society does to a question you actually care about.
         </p>
-        <Button variant="primary" href="/signup">
+        <Button variant="primary" href="/sign-up">
           Get Started
         </Button>
       </section>

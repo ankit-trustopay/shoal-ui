@@ -394,7 +394,7 @@ export function Product() {
           Deploy your first swarm in under sixty seconds. Free tier, no card
           required.
         </p>
-        <Button variant="primary" href="/signup">
+        <Button variant="primary" href="/sign-up">
           Get Started
         </Button>
       </FadeIn>

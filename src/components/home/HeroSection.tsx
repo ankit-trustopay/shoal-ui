@@ -47,7 +47,7 @@ export function HeroSection() {
           transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col sm:flex-row gap-3 justify-center mt-10"
         >
-          <Button variant="primary" href="/signup">
+          <Button variant="primary" href="/sign-up">
             Get Started
           </Button>
           <Button variant="secondary" href="/product">

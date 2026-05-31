@@ -1,91 +1,98 @@
 import React from 'react';
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  useLocation,
-  Navigate } from
-'react-router-dom';
-import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { AppShell } from './components/AppShell';
-import { AppSignInGate } from './components/auth/AppSignInGate';
+import { ProtectedAppRoutes } from './components/auth/ProtectedAppRoutes';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { UseCases } from './pages/UseCases';
 import { Pricing } from './pages/Pricing';
 import { Contact } from './pages/Contact';
 import { Product } from './pages/Product';
-import { NewSwarm } from './pages/NewSwarm';
-import { History } from './pages/History';
-import { Credits } from './pages/Credits';
-import { LiveSwarm } from './pages/LiveSwarm';
-import { Report } from './pages/Report';
-import { Settings } from './pages/Settings';
-import { SignIn } from './pages/SignIn';
-import { SignUp } from './pages/SignUp';
+import { SignInPage } from './pages/SignInPage';
+import { SignUpPage } from './pages/SignUpPage';
+
 function Placeholder() {
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex min-h-[60vh] items-center justify-center">
       <p className="font-mono text-sm uppercase tracking-widest text-gray-400">
         Shoal AI · Page not found
       </p>
-    </div>);
-
+    </div>
+  );
 }
-function AppRoutes() {
-  const location = useLocation();
-  const path = location.pathname;
-  // Full-screen auth routes (no nav/footer/sidebar)
-  if (path === '/signin' || path === '/signup') {
-    return (
-      <Routes>
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-      </Routes>);
 
-  }
-  if (path.startsWith('/app')) {
-    return (
-      <>
-        <SignedIn>
-          <AppShell>
-            <Routes>
-              <Route path="/app" element={<Navigate to="/app/new" replace />} />
-              <Route path="/app/new" element={<NewSwarm />} />
-              <Route path="/app/history" element={<History />} />
-              <Route path="/app/credits" element={<Credits />} />
-              <Route path="/app/live" element={<LiveSwarm />} />
-              <Route path="/app/report" element={<Report />} />
-              <Route path="/app/settings" element={<Settings />} />
-              <Route path="/app/*" element={<Navigate to="/app/new" replace />} />
-            </Routes>
-          </AppShell>
-        </SignedIn>
-        <SignedOut>
-          <AppSignInGate />
-        </SignedOut>
-      </>
-    );
-  }
-  return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/product" element={<Product />} />
-        <Route path="/use-cases" element={<UseCases />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="*" element={<Placeholder />} />
-      </Routes>
-    </Layout>);
-
+function MarketingPage({ children }: { children: React.ReactNode }) {
+  return <Layout>{children}</Layout>;
 }
+
 export function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>);
+      <Routes>
+        <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/signin" element={<Navigate to="/sign-in" replace />} />
+        <Route path="/signup" element={<Navigate to="/sign-up" replace />} />
 
+        <Route path="/app/*" element={<ProtectedAppRoutes />} />
+
+        <Route
+          path="/"
+          element={
+            <MarketingPage>
+              <Home />
+            </MarketingPage>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <MarketingPage>
+              <About />
+            </MarketingPage>
+          }
+        />
+        <Route
+          path="/product"
+          element={
+            <MarketingPage>
+              <Product />
+            </MarketingPage>
+          }
+        />
+        <Route
+          path="/use-cases"
+          element={
+            <MarketingPage>
+              <UseCases />
+            </MarketingPage>
+          }
+        />
+        <Route
+          path="/pricing"
+          element={
+            <MarketingPage>
+              <Pricing />
+            </MarketingPage>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <MarketingPage>
+              <Contact />
+            </MarketingPage>
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <MarketingPage>
+              <Placeholder />
+            </MarketingPage>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
 }
