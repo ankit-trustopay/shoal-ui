@@ -42,6 +42,7 @@ export interface SwarmHistoryListItem {
   confidence: number | null;
   status: SwarmStatus;
   createdAt: string;
+  agentCount: number | null;
   cost: number | null;
   runtime: number | null;
 }

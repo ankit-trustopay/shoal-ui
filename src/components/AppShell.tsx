@@ -46,10 +46,11 @@ const currentUser = {
   name: 'Ankit',
   email: 'ankit.trustopay@gmail.com',
   initial: 'A',
-  plan: 'Starter' as 'Lite' | 'Starter' | 'Pro' | 'Max',
-  credits: 248
+  plan: 'Free' as 'Free' | 'Lite' | 'Starter' | 'Pro' | 'Max',
+  credits: 10
 };
 const planRank: Record<string, number> = {
+  Free: 0,
   Lite: 0,
   Starter: 1,
   Pro: 2,
