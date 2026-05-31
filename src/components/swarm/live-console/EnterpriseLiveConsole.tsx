@@ -5,7 +5,15 @@ import {
   LIVE_CONSOLE_MOCK,
   type ConsoleTabId,
 } from '../../../data/liveConsoleMock';
+import type { SwarmMessageRecord } from '../../../lib/api';
 import { MonoLabel } from '../../ui/MonoLabel';
+
+interface EnterpriseLiveConsoleProps {
+  loading: boolean;
+  premise: string | null;
+  managerText: string | null;
+  debateMessages: SwarmMessageRecord[];
+}
 
 function ConfidenceRing({ value }: { value: number }) {
   const radius = 52;
@@ -14,12 +22,7 @@ function ConfidenceRing({ value }: { value: number }) {
 
   return (
     <div className="relative flex h-[140px] w-[140px] items-center justify-center">
-      <svg
-        width="140"
-        height="140"
-        className="-rotate-90"
-        aria-hidden
-      >
+      <svg width="140" height="140" className="-rotate-90" aria-hidden>
         <circle
           cx="70"
           cy="70"
@@ -78,6 +81,27 @@ function StatBox({
   );
 }
 
+function ConsensusSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3" aria-hidden>
+      <div className="h-3 w-24 rounded bg-gray-200" />
+      <div className="h-5 w-full rounded bg-gray-200" />
+      <div className="h-5 w-[95%] rounded bg-gray-200" />
+      <div className="h-5 w-[88%] rounded bg-gray-200" />
+      <div className="h-5 w-[72%] rounded bg-gray-200" />
+    </div>
+  );
+}
+
+function TitleSkeleton() {
+  return (
+    <div className="animate-pulse max-w-4xl space-y-3" aria-hidden>
+      <div className="h-10 w-full rounded-lg bg-gray-200" />
+      <div className="h-10 w-[90%] rounded-lg bg-gray-200" />
+    </div>
+  );
+}
+
 function VoteDistributionBar() {
   const { for: forVotes, against, neutral } = LIVE_CONSOLE_MOCK.votes;
   const total = forVotes + against + neutral;
@@ -108,17 +132,14 @@ function VoteDistributionBar() {
         <div
           className="bg-orange-500 transition-all"
           style={{ width: `${forPct}%` }}
-          title={`For ${forVotes}`}
         />
         <div
           className="bg-red-500 transition-all"
           style={{ width: `${againstPct}%` }}
-          title={`Against ${against}`}
         />
         <div
           className="bg-gray-300 transition-all"
           style={{ width: `${neutralPct}%` }}
-          title={`Neutral ${neutral}`}
         />
       </div>
     </section>
@@ -205,6 +226,39 @@ function OverviewTab() {
   );
 }
 
+function DebateTab({ messages }: { messages: SwarmMessageRecord[] }) {
+  if (messages.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-16 text-center">
+        <p className="text-sm text-gray-500">
+          No agent arguments yet. The swarm is still deliberating.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="space-y-4">
+      {messages.map((message, index) => (
+        <li
+          key={message.id}
+          className="rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm"
+        >
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <span className="font-semibold text-orange-500">{message.role}</span>
+            <span className="font-mono text-[10px] text-gray-400">
+              Agent {String(index + 1).padStart(2, '0')}
+            </span>
+          </div>
+          <p className="text-sm sm:text-base text-gray-800 leading-relaxed">
+            {message.text}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function PlaceholderTab({ label }: { label: string }) {
   return (
     <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20 text-center">
@@ -216,31 +270,48 @@ function PlaceholderTab({ label }: { label: string }) {
   );
 }
 
-export function EnterpriseLiveConsole() {
+export function EnterpriseLiveConsole({
+  loading,
+  premise,
+  managerText,
+  debateMessages,
+}: EnterpriseLiveConsoleProps) {
   const [activeTab, setActiveTab] = useState<ConsoleTabId>('overview');
   const mock = LIVE_CONSOLE_MOCK;
 
+  const displayPremise = premise ?? mock.premise;
+
   return (
     <div className="space-y-8 pb-16">
-      {/* Header */}
       <header className="space-y-5 pt-2">
         <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-orange-500">
           {mock.statusLabel}
         </span>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-gray-900 tracking-tight leading-[1.08] max-w-5xl">
-          {mock.premise}
-        </h1>
+        {loading && !premise ? (
+          <TitleSkeleton />
+        ) : (
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-gray-900 tracking-tight leading-[1.08] max-w-5xl">
+            {displayPremise}
+          </h1>
+        )}
       </header>
 
-      {/* Hero stats */}
       <section className="rounded-xl border border-gray-200/80 bg-white p-6 sm:p-8 shadow-sm">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
           <div className="lg:col-span-8 space-y-6">
             <div>
               <MonoLabel className="text-orange-500 mb-3 block">Consensus</MonoLabel>
-              <blockquote className="text-lg sm:text-xl text-gray-800 leading-relaxed border-l-4 border-orange-500 pl-5 font-medium">
-                {mock.managerVerdict}
-              </blockquote>
+              {loading ? (
+                <ConsensusSkeleton />
+              ) : managerText ? (
+                <blockquote className="text-lg sm:text-xl text-gray-800 leading-relaxed border-l-4 border-orange-500 pl-5 font-medium">
+                  {managerText}
+                </blockquote>
+              ) : (
+                <p className="text-sm text-gray-500 italic">
+                  Manager consensus is not available yet.
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap gap-3">
               <StatBox label="Agents" value={mock.stats.agents} />
@@ -263,7 +334,6 @@ export function EnterpriseLiveConsole() {
 
       <VoteDistributionBar />
 
-      {/* Tabs */}
       <nav
         className="flex flex-wrap gap-1 border-b border-gray-200"
         aria-label="Console sections"
@@ -300,7 +370,7 @@ export function EnterpriseLiveConsole() {
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'evidence' && <PlaceholderTab label="Evidence" />}
         {activeTab === 'agents' && <PlaceholderTab label="Agents" />}
-        {activeTab === 'debate' && <PlaceholderTab label="Debate" />}
+        {activeTab === 'debate' && <DebateTab messages={debateMessages} />}
         {activeTab === 'cost' && <PlaceholderTab label="Cost" />}
       </div>
     </div>
