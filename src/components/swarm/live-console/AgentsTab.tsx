@@ -102,10 +102,10 @@ export function AgentsTab({ agentProfiles, loading = false }: AgentsTabProps) {
       <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div>
           <MonoLabel className="mb-2 block">Synthetic society</MonoLabel>
-          <h3 className="text-lg font-bold text-gray-900">Agent profiles</h3>
+          <h3 className="text-lg font-bold text-gray-900">Archetype leaders</h3>
           <p className="mt-1 text-sm text-gray-500 max-w-xl">
-            High-fidelity personas that debated your premise. Select a card to open the
-            full CRM-style dossier.
+            Five key voices representing the full simulated swarm. Select a card to open
+            the full CRM-style dossier.
           </p>
         </div>
         {hasProfiles && (
