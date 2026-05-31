@@ -79,6 +79,7 @@ export function LiveSwarm() {
         </p>
       )}
       <EnterpriseLiveConsole
+        swarmId={swarmId}
         loading={initialLoading}
         isDeliberating={deliberating}
         premise={swarm?.premise ?? null}

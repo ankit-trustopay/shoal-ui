@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  ArrowLeft,
-  Download,
-  ExternalLink,
-  Quote,
-  Zap,
-} from 'lucide-react';
+import { ExternalLink, Quote } from 'lucide-react';
 import {
   CONSOLE_TABS,
   LIVE_CONSOLE_MOCK,
@@ -17,6 +10,8 @@ import type { SwarmEvidenceRecord, SwarmMessageRecord } from '../../../lib/api';
 import { MonoLabel } from '../../ui/MonoLabel';
 import { AgentsTab } from './AgentsTab';
 import { EvidenceTab } from './EvidenceTab';
+import { ConsoleToast, useConsoleToast } from '../../ui/ConsoleToast';
+import { LiveConsoleActionBar } from './LiveConsoleActionBar';
 import { SwarmDeliberatingBanner } from './SwarmDeliberatingBanner';
 import {
   formatCostCredits,
@@ -25,6 +20,7 @@ import {
 } from './swarmStats';
 
 interface EnterpriseLiveConsoleProps {
+  swarmId: string;
   loading: boolean;
   isDeliberating?: boolean;
   premise: string | null;
@@ -115,39 +111,6 @@ function TitleSkeleton() {
     <div className="animate-pulse max-w-4xl space-y-3 mb-8" aria-hidden>
       <div className="h-10 w-full rounded-lg bg-orange-100/80" />
       <div className="h-10 w-[92%] rounded-lg bg-orange-100/80" />
-    </div>
-  );
-}
-
-function TopActionBar() {
-  const outlineBtn =
-    'inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors';
-
-  return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <Link
-        to="/app/history"
-        className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
-      >
-        <ArrowLeft size={16} />
-        All swarms
-      </Link>
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className={outlineBtn}>
-          Copy summary
-        </button>
-        <button type="button" className={outlineBtn}>
-          <Download size={16} />
-          Export
-        </button>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors shadow-sm"
-        >
-          <Zap size={16} />
-          Re-deploy
-        </button>
-      </div>
     </div>
   );
 }
@@ -344,6 +307,7 @@ function PlaceholderTab({ label }: { label: string }) {
 }
 
 export function EnterpriseLiveConsole({
+  swarmId,
   loading,
   isDeliberating = false,
   premise,
@@ -355,6 +319,7 @@ export function EnterpriseLiveConsole({
   sessionCode,
 }: EnterpriseLiveConsoleProps) {
   const [activeTab, setActiveTab] = useState<ConsoleTabId>('overview');
+  const { toastMessage, showToast } = useConsoleToast();
   const mock = LIVE_CONSOLE_MOCK;
   const displayPremise = premise ?? mock.premise;
 
@@ -375,7 +340,16 @@ export function EnterpriseLiveConsole({
 
   return (
     <div className="space-y-10 pb-20">
-      <TopActionBar />
+      <ConsoleToast message={toastMessage} />
+      <LiveConsoleActionBar
+        swarmId={swarmId}
+        premise={displayPremise}
+        managerText={managerText}
+        stats={stats}
+        sessionCode={sessionCode}
+        actionsDisabled={showDeliberating}
+        onToast={showToast}
+      />
 
       {showDeliberating && <SwarmDeliberatingBanner />}
 

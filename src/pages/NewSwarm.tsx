@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef, type ComponentType } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowUpIcon,
   ChevronDownIcon,
@@ -100,6 +100,7 @@ function truncate(text: string, max = 70) {
 }
 export function NewSwarm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [prompt, setPrompt] = useState('');
   const [planId, setPlanId] = useState<Plan['id']>('starter');
   const [agentCount, setAgentCount] = useState(PLAN_AGENT_DEFAULT.starter);
@@ -115,6 +116,13 @@ export function NewSwarm() {
   const activePlan = plans.find((p) => p.id === planId) ?? plans[0];
   const ActiveIcon = activePlan.icon;
   const maxAgents = PLAN_AGENT_MAX[planId];
+
+  useEffect(() => {
+    const query = searchParams.get('query');
+    if (query) {
+      setPrompt(query);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setAgentCount((current) => {

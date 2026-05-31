@@ -125,6 +125,31 @@ export function AgentProfileModal({ agent, onClose }: AgentProfileModalProps) {
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-8 sm:px-8 space-y-8">
+              {(agent.maritalStatus || agent.culturalBackground) && (
+                <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {agent.maritalStatus && (
+                    <div className="rounded-xl border border-gray-200/80 bg-gray-50/80 p-4">
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        Marital status
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {agent.maritalStatus}
+                      </p>
+                    </div>
+                  )}
+                  {agent.culturalBackground && (
+                    <div className="rounded-xl border border-gray-200/80 bg-gray-50/80 p-4 sm:col-span-2">
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        Cultural background
+                      </p>
+                      <p className="text-sm text-gray-800 leading-relaxed">
+                        {agent.culturalBackground}
+                      </p>
+                    </div>
+                  )}
+                </section>
+              )}
+
               <section className="grid grid-cols-2 gap-4">
                 <div className="rounded-xl border border-gray-200/80 bg-gray-50/80 p-4">
                   <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">

@@ -10,6 +10,8 @@ export interface AgentProfile {
   age: number;
   location: string;
   income: string;
+  maritalStatus?: string;
+  culturalBackground?: string;
   iq: number;
   eq: number;
   riskTolerance: RiskTolerance;
@@ -87,14 +89,27 @@ function normalizeProfile(raw: unknown, index: number): AgentProfile | null {
   const id = readNumber(raw, 'id', 'Id') ?? index + 1;
   const age = readNumber(raw, 'age', 'Age') ?? 30;
 
-  return {
-    id: Math.trunc(id),
-    name,
-    role,
-    age: Math.max(18, Math.min(80, Math.trunc(age))),
-    location: readString(raw, 'location', 'Location') || 'Unknown',
-    income: readString(raw, 'income', 'Income') || '—',
-    iq: clampStat(readNumber(raw, 'iq', 'IQ'), 110),
+    const maritalStatus =
+      readString(raw, 'maritalStatus', 'marital_status', 'MaritalStatus') ||
+      undefined;
+    const culturalBackground =
+      readString(
+        raw,
+        'culturalBackground',
+        'cultural_background',
+        'CulturalBackground',
+      ) || undefined;
+
+    return {
+      id: Math.trunc(id),
+      name,
+      role,
+      age: Math.max(18, Math.min(80, Math.trunc(age))),
+      location: readString(raw, 'location', 'Location') || 'Unknown',
+      income: readString(raw, 'income', 'Income') || '—',
+      maritalStatus,
+      culturalBackground,
+      iq: clampStat(readNumber(raw, 'iq', 'IQ'), 110),
     eq: clampStat(readNumber(raw, 'eq', 'EQ'), 115),
     riskTolerance: parseRiskTolerance(raw.riskTolerance ?? raw.RiskTolerance),
     biases: readString(raw, 'biases', 'Biases') || 'No bias data recorded.',
