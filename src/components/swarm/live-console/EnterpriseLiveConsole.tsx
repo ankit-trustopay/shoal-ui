@@ -402,7 +402,9 @@ export function EnterpriseLiveConsole({
         onToast={showToast}
       />
 
-      {showDeliberating && <SwarmDeliberatingBanner />}
+      {showDeliberating && !managerText && (
+        <SwarmDeliberatingBanner sessionCode={sessionCode} premise={premise} />
+      )}
 
       <section className="rounded-2xl border border-orange-100/80 bg-gradient-to-br from-orange-50/50 to-white p-6 sm:p-10 shadow-sm">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-orange-500 mb-5">

@@ -9,6 +9,7 @@ import {
   LinkIcon,
   XIcon,
 } from 'lucide-react';
+import { SwarmIgnitionProgress } from '../components/swarm/live-console/SwarmIgnitionProgress';
 import { createSwarm } from '../lib/api';
 import {
   DEFAULT_SWARM_MODEL,
@@ -193,6 +194,19 @@ export function NewSwarm() {
   const hasAttachments = attachedFiles.length > 0 || attachedLinks.length > 0;
   return (
     <div className="px-4 sm:px-6 md:px-8 lg:px-12 pb-12 relative">
+      {isIgniting && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] px-4"
+          role="presentation"
+        >
+          <SwarmIgnitionProgress
+            variant="overlay"
+            sessionCode="SWM_IGNITING"
+            premise={prompt.trim() || null}
+          />
+        </div>
+      )}
+
       {/* Subtle radial glow */}
       <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-orange-500/5 blur-3xl -z-0" />
 
