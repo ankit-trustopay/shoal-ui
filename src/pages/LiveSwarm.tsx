@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageContainer } from '../components/ui/PageContainer';
 import { SwarmSessionHeader } from '../components/swarm/SwarmSessionHeader';
 import { SwarmOverviewSidebar } from '../components/swarm/SwarmOverviewSidebar';
-import { AgentFeed } from '../components/swarm/AgentFeed';
 import { SwarmTelemetryPanel } from '../components/swarm/SwarmTelemetryPanel';
+import { SwarmOrchestrationLoader } from '../components/swarm/live-console/SwarmOrchestrationLoader';
+import { FinalConsensusHero } from '../components/swarm/live-console/FinalConsensusHero';
+import { AdversarialTranscript } from '../components/swarm/live-console/AdversarialTranscript';
 import { API_BASE, type SwarmRecord } from '../lib/api';
 import type { FeedMessage } from '../types/swarm';
 import { LIVE_SESSION, activePersonas, swarmTelemetry } from '../data/liveSwarm';
@@ -34,9 +36,13 @@ function mapMessagesToFeed(
 ): FeedMessage[] {
   const tagByRole: Record<string, FeedMessage['tag']> = {
     Skeptic: 'CHALLENGING PREMISE',
-    Expert: 'COUNTER-ARGUMENT',
-    Manager: 'SYNTHESIS',
     'Financial Skeptic': 'CHALLENGING PREMISE',
+    Expert: 'COUNTER-ARGUMENT',
+    'Domain Expert': 'CITING SOURCE',
+    'Risk Analyst': 'COUNTER-ARGUMENT',
+    'Consumer Voice': 'AGREEMENT',
+    Optimist: 'AGREEMENT',
+    Manager: 'SYNTHESIS',
   };
 
   return messages.map((message) => ({
@@ -57,6 +63,16 @@ export function LiveSwarm() {
   const [feedMessages, setFeedMessages] = useState<FeedMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const managerMessage = useMemo(
+    () => feedMessages.find((m) => m.persona === 'Manager'),
+    [feedMessages],
+  );
+
+  const debateMessages = useMemo(
+    () => feedMessages.filter((m) => m.persona !== 'Manager'),
+    [feedMessages],
+  );
 
   useEffect(() => {
     if (!swarmId) {
@@ -141,17 +157,6 @@ export function LiveSwarm() {
     };
   }, [swarmId]);
 
-  if (loading) {
-    return (
-      <PageContainer width="full" className="py-6 md:py-8">
-        <SwarmSessionHeader
-          sessionId={swarmId ?? '—'}
-          title="Loading your swarm data..."
-        />
-      </PageContainer>
-    );
-  }
-
   if (fetchError) {
     return (
       <PageContainer width="full" className="py-6 md:py-8">
@@ -161,21 +166,46 @@ export function LiveSwarm() {
     );
   }
 
-  if (!premise || !sessionId) {
+  if (!swarmId) {
     return (
       <PageContainer width="full" className="py-6 md:py-8">
-        <SwarmSessionHeader sessionId={swarmId ?? '—'} title="Swarm session" />
-        <SwarmError message="Swarm data is unavailable" />
+        <SwarmSessionHeader sessionId="—" title="Swarm session" />
+        <SwarmError message="Missing swarmId in URL" />
       </PageContainer>
     );
   }
 
   return (
     <PageContainer width="full" className="py-6 md:py-8">
-      <SwarmSessionHeader sessionId={sessionId} title={premise} />
+      <SwarmSessionHeader
+        sessionId={sessionId ?? swarmId}
+        title={loading ? 'Synthetic society convening...' : (premise ?? '—')}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-        <div className="lg:col-span-3 order-2 lg:order-1">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
+        <div className="xl:col-span-9 space-y-8 min-w-0">
+          {loading ? (
+            <SwarmOrchestrationLoader sessionId={swarmId} premise={premise} />
+          ) : (
+            <>
+              {managerMessage ? (
+                <FinalConsensusHero
+                  verdict={managerMessage.body}
+                  sessionId={sessionId ?? swarmId}
+                />
+              ) : (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-5 text-amber-900 text-sm font-medium">
+                  Final consensus is not yet available. The Manager agent has
+                  not returned a verdict.
+                </div>
+              )}
+
+              <AdversarialTranscript messages={debateMessages} />
+            </>
+          )}
+        </div>
+
+        <div className="xl:col-span-3 space-y-6">
           <SwarmOverviewSidebar
             round={LIVE_SESSION.round}
             totalRounds={LIVE_SESSION.totalRounds}
@@ -183,14 +213,9 @@ export function LiveSwarm() {
             startedAt={LIVE_SESSION.startedAt}
             elapsed={LIVE_SESSION.elapsed}
           />
-        </div>
-
-        <div className="lg:col-span-6 order-1 lg:order-2">
-          <AgentFeed messages={feedMessages} />
-        </div>
-
-        <div className="lg:col-span-3 order-3">
-          <SwarmTelemetryPanel items={swarmTelemetry} />
+          {!loading && (
+            <SwarmTelemetryPanel items={swarmTelemetry} />
+          )}
         </div>
       </div>
     </PageContainer>
