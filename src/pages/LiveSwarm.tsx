@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageContainer } from '../components/ui/PageContainer';
 import { EnterpriseLiveConsole } from '../components/swarm/live-console/EnterpriseLiveConsole';
+import { deriveSwarmStats } from '../components/swarm/live-console/swarmStats';
 import { API_BASE, type SwarmRecord } from '../lib/api';
 
 function SwarmError({ message }: { message: string }) {
@@ -104,6 +105,14 @@ export function LiveSwarm() {
     return swarm?.messages?.filter((m) => m.role !== 'Manager') ?? [];
   }, [swarm]);
 
+  const swarmStats = useMemo(() => deriveSwarmStats(swarm), [swarm]);
+
+  const sessionCode = useMemo(() => {
+    if (!swarmId) return 'SWM_UNKNOWN';
+    const compact = swarmId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    return `SWM_${compact.slice(0, 8) || 'SEED'}`;
+  }, [swarmId]);
+
   if (!swarmId) {
     return (
       <PageContainer width="full" className="py-6 md:py-10">
@@ -127,6 +136,8 @@ export function LiveSwarm() {
         premise={swarm?.premise ?? null}
         managerText={managerMessage?.text ?? null}
         debateMessages={debateMessages}
+        stats={swarmStats}
+        sessionCode={sessionCode}
       />
     </PageContainer>
   );

@@ -26,6 +26,15 @@ export interface SwarmMessageRecord {
   createdAt: string;
 }
 
+export interface SwarmEvidenceRecord {
+  id: string;
+  swarmId: string;
+  title: string;
+  source: string;
+  url: string;
+  snippet: string;
+}
+
 export interface SwarmRecord {
   id: string;
   userId: string;
@@ -33,8 +42,15 @@ export interface SwarmRecord {
   status: SwarmStatus;
   agentCount: number;
   resultData: unknown;
+  confidence?: number | null;
+  votesFor?: number | null;
+  votesAgainst?: number | null;
+  votesNeutral?: number | null;
+  runtime?: number | null;
+  cost?: number | null;
   createdAt: string;
   messages?: SwarmMessageRecord[];
+  evidence?: SwarmEvidenceRecord[];
 }
 
 export interface ApiErrorBody {

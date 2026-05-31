@@ -14,12 +14,20 @@ import {
 } from '../../../data/liveConsoleMock';
 import type { SwarmMessageRecord } from '../../../lib/api';
 import { MonoLabel } from '../../ui/MonoLabel';
+import { AgentsTab } from './AgentsTab';
+import {
+  formatCostCredits,
+  votePercent,
+  type SwarmConsoleStats,
+} from './swarmStats';
 
 interface EnterpriseLiveConsoleProps {
   loading: boolean;
   premise: string | null;
   managerText: string | null;
   debateMessages: SwarmMessageRecord[];
+  stats: SwarmConsoleStats;
+  sessionCode: string;
 }
 
 function ConfidenceRing({ value }: { value: number }) {
@@ -138,30 +146,29 @@ function TopActionBar() {
   );
 }
 
-function VoteDistributionSection() {
-  const votes = LIVE_CONSOLE_MOCK.votes;
-  const total = votes.totalAgents;
-  const forPct = (votes.for / total) * 100;
-  const againstPct = (votes.against / total) * 100;
-  const neutralPct = (votes.neutral / total) * 100;
+function VoteDistributionSection({ stats }: { stats: SwarmConsoleStats }) {
+  const total = stats.totalVotingAgents;
+  const forPct = votePercent(stats.votesFor, total);
+  const againstPct = votePercent(stats.votesAgainst, total);
+  const neutralPct = votePercent(stats.votesNeutral, total);
 
   const columns = [
     {
       label: 'For',
-      percent: `${votes.forPercent}%`,
-      count: votes.for,
+      percent: `${forPct}%`,
+      count: stats.votesFor,
       dotClass: 'bg-orange-500',
     },
     {
       label: 'Against',
-      percent: `${votes.againstPercent}%`,
-      count: votes.against,
+      percent: `${againstPct}%`,
+      count: stats.votesAgainst,
       dotClass: 'bg-red-500',
     },
     {
       label: 'Neutral',
-      percent: `${votes.neutralPercent}%`,
-      count: votes.neutral,
+      percent: `${neutralPct}%`,
+      count: stats.votesNeutral,
       dotClass: 'bg-gray-300',
     },
   ];
@@ -170,7 +177,9 @@ function VoteDistributionSection() {
     <section className="rounded-2xl border border-gray-200/80 bg-white p-6 sm:p-8 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <MonoLabel>Vote distribution</MonoLabel>
-        <p className="text-sm text-gray-500">{votes.totalAgents} agents voting</p>
+        <p className="text-sm text-gray-500">
+          {total > 0 ? total : stats.agentCount} agents voting
+        </p>
       </div>
 
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100 mb-8">
@@ -211,7 +220,7 @@ function VoteDistributionSection() {
   );
 }
 
-function OverviewTab() {
+function OverviewTab({ stats }: { stats: SwarmConsoleStats }) {
   const mock = LIVE_CONSOLE_MOCK;
 
   return (
@@ -242,7 +251,7 @@ function OverviewTab() {
           {mock.minorityDissent}
         </p>
         <p className="mt-3 font-mono text-xs text-red-700/80">
-          {mock.votes.against} agents · dissenting view
+          {stats.votesAgainst} agents · dissenting view
         </p>
       </section>
 
@@ -333,12 +342,14 @@ export function EnterpriseLiveConsole({
   premise,
   managerText,
   debateMessages,
+  stats,
+  sessionCode,
 }: EnterpriseLiveConsoleProps) {
   const [activeTab, setActiveTab] = useState<ConsoleTabId>('overview');
   const mock = LIVE_CONSOLE_MOCK;
   const displayPremise = premise ?? mock.premise;
 
-  const statusLine = `${mock.statusLabel} • ${mock.sessionCode} • ${mock.sessionDate}`;
+  const statusLine = `${mock.statusLabel} • ${sessionCode} • ${mock.sessionDate}`;
 
   return (
     <div className="space-y-10 pb-20">
@@ -381,17 +392,24 @@ export function EnterpriseLiveConsole({
               )}
             </div>
             <div className="flex flex-wrap gap-3">
-              <StatBox label="Agents" value={mock.stats.agents} />
-              <StatBox label="Sources" value={mock.stats.sources} />
-              <StatBox label="Runtime" value={mock.stats.runtimeSec} unit="s" />
-              <StatBox label="Cost" value={mock.stats.costCredits} unit="cr" />
+              <StatBox label="Agents" value={stats.agentCount} />
+              <StatBox
+                label="Sources"
+                value={stats.sourceCount > 0 ? stats.sourceCount : '—'}
+              />
+              <StatBox label="Runtime" value={stats.runtime} unit="s" />
+              <StatBox
+                label="Cost"
+                value={formatCostCredits(stats.cost)}
+                unit="cr"
+              />
             </div>
           </div>
           <div className="lg:col-span-4 flex flex-col items-center justify-center border-t lg:border-t-0 lg:border-l border-orange-100/80 pt-10 lg:pt-0 lg:pl-10">
-            <ConfidenceRing value={mock.confidence} />
+            <ConfidenceRing value={stats.confidence} />
             <p className="mt-5 text-center text-sm text-gray-600 max-w-[220px] leading-relaxed">
               <span className="font-semibold text-gray-900">
-                {mock.agreementPercent}%
+                {stats.agreementPercent}%
               </span>{' '}
               of swarm aligned with final consensus
             </p>
@@ -399,7 +417,7 @@ export function EnterpriseLiveConsole({
         </div>
       </section>
 
-      <VoteDistributionSection />
+      <VoteDistributionSection stats={stats} />
 
       <nav
         className="flex flex-wrap gap-1 border-b border-gray-200"
@@ -434,9 +452,9 @@ export function EnterpriseLiveConsole({
       </nav>
 
       <div className="pt-6">
-        {activeTab === 'overview' && <OverviewTab />}
+        {activeTab === 'overview' && <OverviewTab stats={stats} />}
         {activeTab === 'evidence' && <PlaceholderTab label="Evidence" />}
-        {activeTab === 'agents' && <PlaceholderTab label="Agents" />}
+        {activeTab === 'agents' && <AgentsTab />}
         {activeTab === 'debate' && <DebateTab messages={debateMessages} />}
         {activeTab === 'cost' && <PlaceholderTab label="Cost" />}
       </div>
