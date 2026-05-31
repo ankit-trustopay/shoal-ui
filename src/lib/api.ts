@@ -3,13 +3,34 @@ const API_BASE =
 
 export { API_BASE };
 
-const DEFAULT_USER_ID =
-  import.meta.env.VITE_DEFAULT_USER_ID ?? "test-user-001";
+async function getClerkSessionToken(): Promise<string | null> {
+  try {
+    const token = await window.Clerk?.session?.getToken();
+    return token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function buildAuthHeaders(
+  extra?: Record<string, string>,
+): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...extra,
+  };
+
+  const token = await getClerkSessionToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+}
 
 export interface CreateSwarmPayload {
   premise: string;
   agentCount: number;
-  userId?: string;
 }
 
 export interface CreateSwarmResponse {
@@ -75,9 +96,8 @@ export async function createSwarm(
 ): Promise<CreateSwarmResponse> {
   const res = await fetch(`${API_BASE}/api/swarms`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await buildAuthHeaders(),
     body: JSON.stringify({
-      userId: payload.userId ?? DEFAULT_USER_ID,
       premise: payload.premise,
       agentCount: payload.agentCount,
     }),
@@ -97,7 +117,9 @@ export async function createSwarm(
 }
 
 export async function listSwarms(): Promise<SwarmHistoryListItem[]> {
-  const res = await fetch(`${API_BASE}/api/swarms`);
+  const res = await fetch(`${API_BASE}/api/swarms`, {
+    headers: await buildAuthHeaders(),
+  });
   const data: unknown = await res.json();
 
   if (!res.ok) {
@@ -115,6 +137,9 @@ export async function listSwarms(): Promise<SwarmHistoryListItem[]> {
 export async function getSwarm(swarmId: string): Promise<SwarmRecord> {
   const res = await fetch(
     `${API_BASE}/api/swarms/${encodeURIComponent(swarmId)}`,
+    {
+      headers: await buildAuthHeaders(),
+    },
   );
 
   const data = (await res.json()) as SwarmRecord & ApiErrorBody;
