@@ -32,11 +32,18 @@ function formatMessageTime(iso: string): string {
 function mapMessagesToFeed(
   messages: SwarmRecord['messages'] = [],
 ): FeedMessage[] {
+  const tagByRole: Record<string, FeedMessage['tag']> = {
+    Skeptic: 'CHALLENGING PREMISE',
+    Expert: 'COUNTER-ARGUMENT',
+    Manager: 'SYNTHESIS',
+    'Financial Skeptic': 'CHALLENGING PREMISE',
+  };
+
   return messages.map((message) => ({
     id: message.id,
     persona: message.role,
     timestamp: formatMessageTime(message.createdAt),
-    tag: 'CHALLENGING PREMISE',
+    tag: tagByRole[message.role] ?? 'CHALLENGING PREMISE',
     body: message.text,
   }));
 }
