@@ -6,8 +6,10 @@ import {
   useLocation,
   Navigate } from
 'react-router-dom';
+import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import { Layout } from './components/Layout';
 import { AppShell } from './components/AppShell';
+import { AppSignInGate } from './components/auth/AppSignInGate';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { UseCases } from './pages/UseCases';
@@ -45,19 +47,26 @@ function AppRoutes() {
   }
   if (path.startsWith('/app')) {
     return (
-      <AppShell>
-        <Routes>
-          <Route path="/app" element={<Navigate to="/app/new" replace />} />
-          <Route path="/app/new" element={<NewSwarm />} />
-          <Route path="/app/history" element={<History />} />
-          <Route path="/app/credits" element={<Credits />} />
-          <Route path="/app/live" element={<LiveSwarm />} />
-          <Route path="/app/report" element={<Report />} />
-          <Route path="/app/settings" element={<Settings />} />
-          <Route path="/app/*" element={<Navigate to="/app/new" replace />} />
-        </Routes>
-      </AppShell>);
-
+      <>
+        <SignedIn>
+          <AppShell>
+            <Routes>
+              <Route path="/app" element={<Navigate to="/app/new" replace />} />
+              <Route path="/app/new" element={<NewSwarm />} />
+              <Route path="/app/history" element={<History />} />
+              <Route path="/app/credits" element={<Credits />} />
+              <Route path="/app/live" element={<LiveSwarm />} />
+              <Route path="/app/report" element={<Report />} />
+              <Route path="/app/settings" element={<Settings />} />
+              <Route path="/app/*" element={<Navigate to="/app/new" replace />} />
+            </Routes>
+          </AppShell>
+        </SignedIn>
+        <SignedOut>
+          <AppSignInGate />
+        </SignedOut>
+      </>
+    );
   }
   return (
     <Layout>
