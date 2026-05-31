@@ -6,21 +6,39 @@ import { SwarmOverviewSidebar } from '../components/swarm/SwarmOverviewSidebar';
 import { AgentFeed } from '../components/swarm/AgentFeed';
 import { SwarmTelemetryPanel } from '../components/swarm/SwarmTelemetryPanel';
 import { API_BASE, type SwarmRecord } from '../lib/api';
-import {
-  LIVE_SESSION,
-  activePersonas,
-  debateMessages,
-  swarmTelemetry,
-} from '../data/liveSwarm';
+import type { FeedMessage } from '../types/swarm';
+import { LIVE_SESSION, activePersonas, swarmTelemetry } from '../data/liveSwarm';
 
 function SwarmError({ message }: { message: string }) {
   return (
     <div
       className="rounded-2xl border-4 border-red-600 bg-red-50 px-8 py-10 text-red-900 text-xl md:text-2xl font-bold leading-relaxed"
-      role="alert">
+      role="alert"
+    >
       ERROR FETCHING SWARM: {message}
     </div>
   );
+}
+
+function formatMessageTime(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+function mapMessagesToFeed(
+  messages: SwarmRecord['messages'] = [],
+): FeedMessage[] {
+  return messages.map((message) => ({
+    id: message.id,
+    persona: message.role,
+    timestamp: formatMessageTime(message.createdAt),
+    tag: 'CHALLENGING PREMISE',
+    body: message.text,
+  }));
 }
 
 export function LiveSwarm() {
@@ -29,6 +47,7 @@ export function LiveSwarm() {
 
   const [premise, setPremise] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [feedMessages, setFeedMessages] = useState<FeedMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -38,6 +57,7 @@ export function LiveSwarm() {
       setFetchError('Missing swarmId in URL');
       setPremise(null);
       setSessionId(null);
+      setFeedMessages([]);
       return;
     }
 
@@ -47,6 +67,7 @@ export function LiveSwarm() {
       setLoading(true);
       setFetchError(null);
       setPremise(null);
+      setFeedMessages([]);
       setSessionId(swarmId);
 
       console.log('Fetching swarm ID:', swarmId);
@@ -68,11 +89,11 @@ export function LiveSwarm() {
             'Swarm fetch failed:',
             res.status,
             res.statusText,
-            errorBody
+            errorBody,
           );
 
           throw new Error(
-            `HTTP ${res.status} ${res.statusText}${errorBody ? ` — ${errorBody}` : ''}`
+            `HTTP ${res.status} ${res.statusText}${errorBody ? ` — ${errorBody}` : ''}`,
           );
         }
 
@@ -87,6 +108,7 @@ export function LiveSwarm() {
 
         setPremise(swarm.premise);
         setSessionId(swarm.id);
+        setFeedMessages(mapMessagesToFeed(swarm.messages));
       } catch (err) {
         if (cancelled) return;
 
@@ -97,6 +119,7 @@ export function LiveSwarm() {
 
         setFetchError(message);
         setPremise(null);
+        setFeedMessages([]);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -125,10 +148,7 @@ export function LiveSwarm() {
   if (fetchError) {
     return (
       <PageContainer width="full" className="py-6 md:py-8">
-        <SwarmSessionHeader
-          sessionId={swarmId ?? '—'}
-          title="Swarm session"
-        />
+        <SwarmSessionHeader sessionId={swarmId ?? '—'} title="Swarm session" />
         <SwarmError message={fetchError} />
       </PageContainer>
     );
@@ -159,7 +179,7 @@ export function LiveSwarm() {
         </div>
 
         <div className="lg:col-span-6 order-1 lg:order-2">
-          <AgentFeed messages={debateMessages} />
+          <AgentFeed messages={feedMessages} />
         </div>
 
         <div className="lg:col-span-3 order-3">

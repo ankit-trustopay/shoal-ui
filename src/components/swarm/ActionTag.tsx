@@ -1,5 +1,5 @@
 import React from 'react';
-import type { DebateTag } from '../../data/liveSwarm';
+import type { DebateTag } from '../../types/swarm';
 import { cn } from '../../lib/cn';
 
 const styles: Record<DebateTag, string> = {

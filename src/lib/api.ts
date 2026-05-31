@@ -18,6 +18,14 @@ export interface CreateSwarmResponse {
 
 export type SwarmStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
 
+export interface SwarmMessageRecord {
+  id: string;
+  swarmId: string;
+  text: string;
+  role: string;
+  createdAt: string;
+}
+
 export interface SwarmRecord {
   id: string;
   userId: string;
@@ -26,6 +34,7 @@ export interface SwarmRecord {
   agentCount: number;
   resultData: unknown;
   createdAt: string;
+  messages?: SwarmMessageRecord[];
 }
 
 export interface ApiErrorBody {
