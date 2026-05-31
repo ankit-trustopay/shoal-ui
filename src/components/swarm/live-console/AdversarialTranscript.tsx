@@ -9,47 +9,35 @@ const PERSONA_STYLES: Record<
   string,
   { border: string; bg: string; accent: string; agentId: string }
 > = {
-  'Financial Skeptic': {
-    border: 'border-red-200',
-    bg: 'bg-red-50/80',
-    accent: 'text-red-700',
-    agentId: 'AX-014',
+  'Budget-Conscious Buyer': {
+    border: 'border-emerald-200',
+    bg: 'bg-emerald-50/80',
+    accent: 'text-emerald-800',
+    agentId: 'HV-019',
   },
-  Skeptic: {
-    border: 'border-red-200',
-    bg: 'bg-red-50/80',
-    accent: 'text-red-700',
-    agentId: 'AX-014',
-  },
-  'Domain Expert': {
+  'Performance Enthusiast': {
     border: 'border-blue-200',
     bg: 'bg-blue-50/80',
     accent: 'text-blue-700',
-    agentId: 'AX-022',
+    agentId: 'HV-004',
   },
-  Expert: {
-    border: 'border-blue-200',
-    bg: 'bg-blue-50/80',
-    accent: 'text-blue-700',
-    agentId: 'AX-022',
-  },
-  'Risk Analyst': {
+  'Safety & Practicality Parent': {
     border: 'border-amber-200',
     bg: 'bg-amber-50/80',
     accent: 'text-amber-800',
-    agentId: 'AX-031',
+    agentId: 'HV-012',
   },
-  'Consumer Voice': {
+  'Brand Status Fanboy': {
     border: 'border-violet-200',
     bg: 'bg-violet-50/80',
     accent: 'text-violet-700',
-    agentId: 'AX-007',
+    agentId: 'HV-027',
   },
-  Optimist: {
-    border: 'border-emerald-200',
-    bg: 'bg-emerald-50/80',
-    accent: 'text-emerald-700',
-    agentId: 'AX-041',
+  'Skeptical Mechanic': {
+    border: 'border-red-200',
+    bg: 'bg-red-50/80',
+    accent: 'text-red-700',
+    agentId: 'HV-031',
   },
 };
 
