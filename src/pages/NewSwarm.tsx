@@ -10,6 +10,11 @@ import {
   XIcon,
 } from 'lucide-react';
 import { createSwarm } from '../lib/api';
+import {
+  DEFAULT_SWARM_MODEL,
+  SWARM_MODELS,
+  type SwarmModelId,
+} from '../lib/swarmModels';
 import { useUserAccount } from '../hooks/useUserAccount';
 import {
   saasPlans,
@@ -85,6 +90,9 @@ export function NewSwarm() {
   const [prompt, setPrompt] = useState('');
   const [planId, setPlanId] = useState<Plan['id']>('free');
   const [agentCount, setAgentCount] = useState(PLAN_AGENT_DEFAULT.free);
+  const [modelId, setModelId] = useState<SwarmModelId>(DEFAULT_SWARM_MODEL);
+  const [modelOpen, setModelOpen] = useState(false);
+  const modelRef = useRef<HTMLDivElement>(null);
   const [isIgniting, setIsIgniting] = useState(false);
   const [igniteError, setIgniteError] = useState<string | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
@@ -96,6 +104,8 @@ export function NewSwarm() {
   const [attachedLinks, setAttachedLinks] = useState<string[]>([]);
   const activePlan = plans.find((p) => p.id === planId) ?? plans[0];
   const ActiveIcon = activePlan.icon;
+  const activeModel =
+    SWARM_MODELS.find((model) => model.id === modelId) ?? SWARM_MODELS[0];
   const maxAgents = PLAN_AGENT_MAX[planId];
   const insufficientCredits = agentCount > credits;
   const canIgnite = prompt.trim().length > 0 && !isIgniting && !insufficientCredits;
@@ -119,6 +129,9 @@ export function NewSwarm() {
       if (planRef.current && !planRef.current.contains(e.target as Node)) {
         setPlanOpen(false);
       }
+      if (modelRef.current && !modelRef.current.contains(e.target as Node)) {
+        setModelOpen(false);
+      }
     }
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
@@ -132,7 +145,11 @@ export function NewSwarm() {
     setIgniteError(null);
 
     try {
-      const { swarmId } = await createSwarm({ premise, agentCount });
+      const { swarmId } = await createSwarm({
+        premise,
+        agentCount,
+        model: modelId,
+      });
       await refresh();
       navigate(`/app/live?swarmId=${encodeURIComponent(swarmId)}`);
     } catch (err) {
@@ -142,7 +159,7 @@ export function NewSwarm() {
     } finally {
       setIsIgniting(false);
     }
-  }, [prompt, agentCount, credits, isIgniting, navigate, refresh]);
+  }, [prompt, agentCount, modelId, credits, isIgniting, navigate, refresh]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -195,12 +212,58 @@ export function NewSwarm() {
         </div>
 
         {/* Prompt composer */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <label
+            htmlFor="ai-model"
+            className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500"
+          >
+            AI Model
+          </label>
+          <div className="relative" ref={modelRef}>
+            <button
+              id="ai-model"
+              type="button"
+              onClick={() => setModelOpen((open) => !open)}
+              disabled={isIgniting}
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              {activeModel.label}
+              <ChevronDownIcon size={14} className="text-gray-400" />
+            </button>
+            {modelOpen && (
+              <div className="absolute right-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+                {SWARM_MODELS.map((model) => {
+                  const isSelected = model.id === modelId;
+                  return (
+                    <button
+                      key={model.id}
+                      type="button"
+                      onClick={() => {
+                        setModelId(model.id);
+                        setModelOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors ${
+                        isSelected
+                          ? 'bg-orange-50 text-axiom font-semibold'
+                          : 'text-gray-800 hover:bg-gray-50'
+                      }`}
+                    >
+                      {model.label}
+                      {isSelected && <CheckIcon size={14} className="text-axiom" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="bg-white border border-gray-200/60 rounded-2xl shadow-bento hover:shadow-bento-hover transition-shadow duration-200">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={4}
-            placeholder="e.g. Should we acquire Northwind Robotics at the $480M valuation? Stress-test growth deceleration, customer concentration, and renewal risk."
+            placeholder="e.g. Should we expand into the EU market this quarter, or wait until we hit $4M ARR and have clearer regulatory footing?"
             className="w-full bg-transparent px-6 pt-5 pb-3 text-base text-black placeholder:text-gray-400 focus:outline-none resize-none leading-relaxed" />
 
           {/* Agent count */}

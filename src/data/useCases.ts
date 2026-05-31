@@ -75,7 +75,7 @@ export const useCases: UseCaseItem[] = [
     filter: 'investing',
     title: 'M&A valuation dossier',
     description:
-      'Mirror the Northwind workflow: 1,000 agents scrape filings, press, and forums, then debate until consensus on price, timing, and risk. Built for IC memos and live deal committees.',
+      'Run a full M&A diligence swarm: 1,000 agents scrape filings, press, and forums, then debate until consensus on price, timing, and risk. Built for IC memos and live deal committees.',
     highlights: [
       'Signal vs friction split in every synthesis report',
       'Live transcript with agent IDs (e.g. AX-014)',

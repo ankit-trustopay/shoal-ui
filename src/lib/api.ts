@@ -31,6 +31,7 @@ async function buildAuthHeaders(
 export interface CreateSwarmPayload {
   premise: string;
   agentCount: number;
+  model: string;
 }
 
 export interface CreateSwarmResponse {
@@ -123,6 +124,7 @@ export async function createSwarm(
     body: JSON.stringify({
       premise: payload.premise,
       agentCount: payload.agentCount,
+      model: payload.model,
     }),
   });
 

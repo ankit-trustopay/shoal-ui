@@ -10,6 +10,7 @@ import type {
 import { parseSwarmOverview } from '../../../lib/swarmOverview';
 import { MonoLabel } from '../../ui/MonoLabel';
 import { AgentsTab } from './AgentsTab';
+import { CostTab } from './CostTab';
 import { EvidenceTab } from './EvidenceTab';
 import { ConsoleToast, useConsoleToast } from '../../ui/ConsoleToast';
 import { LiveConsoleActionBar } from './LiveConsoleActionBar';
@@ -233,23 +234,11 @@ function OverviewTab({
   const hasDissent = minorityDissent !== null;
   const hasEvidence = evidence.length > 0;
 
-  if (!hasActions && !hasDissent && !hasEvidence) {
-    return (
-      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 py-16 px-6 text-center">
-        <p className="text-sm text-gray-600 max-w-md mx-auto leading-relaxed">
-          Consensus and vote distribution are shown above. Recommended actions,
-          dissent summaries, and ranked evidence will appear here when provided
-          for this swarm.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-10 pt-2">
-      {hasActions && (
-        <section>
-          <h3 className="text-lg font-bold text-gray-900 mb-5">Recommended Action</h3>
+      <section>
+        <h3 className="text-lg font-bold text-gray-900 mb-5">Recommended Action</h3>
+        {hasActions ? (
           <ol className="space-y-4">
             {recommendedActions.map((action) => (
               <li
@@ -266,8 +255,14 @@ function OverviewTab({
               </li>
             ))}
           </ol>
-        </section>
-      )}
+        ) : (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-10 px-6 text-center">
+            <p className="text-sm text-gray-600">
+              No strategic actions generated for this query.
+            </p>
+          </div>
+        )}
+      </section>
 
       {hasDissent && (
         <section className="rounded-2xl border border-red-200/80 bg-red-50/50 p-6 sm:p-8">
@@ -354,16 +349,6 @@ function DebateTab({ messages }: { messages: SwarmMessageRecord[] }) {
         </li>
       ))}
     </ul>
-  );
-}
-
-function PlaceholderTab({ label }: { label: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 py-20 text-center">
-      <p className="text-sm text-gray-500">
-        <span className="font-semibold text-gray-700">{label}</span> — coming soon
-      </p>
-    </div>
   );
 }
 
@@ -540,7 +525,7 @@ export function EnterpriseLiveConsole({
           />
         )}
         {activeTab === 'debate' && <DebateTab messages={debateMessages} />}
-        {activeTab === 'cost' && <PlaceholderTab label="Cost" />}
+        {activeTab === 'cost' && <CostTab stats={stats} />}
       </div>
     </div>
   );

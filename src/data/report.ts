@@ -1,4 +1,4 @@
-/** Shoal AI synthesis report — Northwind Robotics acquisition dossier */
+/** Shoal AI synthesis report — sample M&A diligence dossier */
 
 export const reportTelemetry = [
   { label: 'Agents Deployed', value: '1,000' },
@@ -41,7 +41,7 @@ export const minorityDissent = [
   {
     id: 'dissent-1',
     agent: 'AX-029 · Domain Expert',
-    text: 'Northwind’s core patent stack (14 of 22 assets) renews before 2027. A strategic acquirer bidding in 60 days could force a 15–20% premium to our model — waiting carries competitive timing risk.',
+    text: 'The target’s core patent stack (14 of 22 assets) renews before 2027. A strategic acquirer bidding in 60 days could force a 15–20% premium to our model — waiting carries competitive timing risk.',
     citations: 31,
   },
   {
@@ -80,7 +80,7 @@ export const reportSources = [
   {
     id: 'src-sec',
     letter: 'S',
-    name: 'SEC EDGAR — Northwind Robotics S-1 / 10-Q (Q3 2025)',
+    name: 'SEC EDGAR — Target S-1 / 10-Q (Q3 2025)',
     domain: 'sec.gov',
     citations: 52,
     href: 'https://www.sec.gov',
@@ -126,5 +126,5 @@ export const REPORT_META = {
   summary:
     'After 14 debate rounds, 1,000 Shoal AI agents converged: the $480M price embeds a growth multiple the filings no longer support. The winning signal is temporal — surface Q3 renewal outcomes before re-engaging. Minority dissent preserves strategic-timing risk if a rival bidder moves within 60 days.',
   question:
-    'Should we acquire Northwind Robotics at the $480M valuation?',
+    'Should we acquire the target at the proposed $480M valuation?',
 };

@@ -23,7 +23,7 @@ export function ConsoleMockup() {
 
         <div className="px-4 sm:px-6 md:px-10 pt-8 pb-6 border-b border-gray-200/60">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-black tracking-tight text-center max-w-3xl mx-auto leading-snug">
-            Should we acquire Northwind Robotics at the $480M valuation, or wait
+            Should we proceed with the acquisition at the proposed valuation, or wait
             two quarters for revised unit economics?
           </h2>
         </div>
