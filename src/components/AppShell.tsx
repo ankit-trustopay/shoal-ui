@@ -11,7 +11,10 @@ import {
   BookOpenIcon,
   PlusIcon,
 } from 'lucide-react';
-import { FREE_TIER_AVAILABLE_CREDITS } from '../data/creditsBilling';
+import {
+  FREE_TIER_AVAILABLE_CREDITS,
+  FREE_TIER_SIDEBAR_LABEL,
+} from '../data/creditsBilling';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -80,7 +83,7 @@ export function AppShell({ children }: AppShellProps) {
                 {displayName}
               </p>
               <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mt-0.5">
-                Free · {FREE_TIER_AVAILABLE_CREDITS} cr
+                {FREE_TIER_SIDEBAR_LABEL} · {FREE_TIER_AVAILABLE_CREDITS} cr
               </p>
             </div>
             <UserButton

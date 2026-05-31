@@ -3,25 +3,28 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowUpIcon,
   ChevronDownIcon,
-  CrownIcon,
-  ZapIcon,
-  Building2Icon,
   CheckIcon,
   LockIcon,
-  RocketIcon,
   PaperclipIcon,
   LinkIcon,
-  XIcon } from
-'lucide-react';
+  XIcon,
+} from 'lucide-react';
 import { createSwarm } from '../lib/api';
+import {
+  CURRENT_BILLING_PLAN_ID,
+  saasPlans,
+  type SaasPlanId,
+} from '../data/creditsBilling';
+
 const examplePrompts = [
-'Should we raise a Series A now or extend runway 9 months and chase $4M ARR first?',
-'Will the EU AI Act force us to relocate model training out of the EU?',
-'Is launching a free tier the right move against our 3 paid competitors?',
-'Which of these 4 candidates should we hire as our first Head of Eng?'];
+  'Should we raise a Series A now or extend runway 9 months and chase $4M ARR first?',
+  'Will the EU AI Act force us to relocate model training out of the EU?',
+  'Is launching a free tier the right move against our 3 paid competitors?',
+  'Which of these 4 candidates should we hire as our first Head of Eng?',
+];
 
 interface Plan {
-  id: 'lite' | 'starter' | 'pro' | 'max';
+  id: SaasPlanId;
   name: string;
   category: string;
   icon: ComponentType<{
@@ -30,66 +33,44 @@ interface Plan {
   }>;
   description: string;
   meta: string;
-  requiredPlan: 'lite' | 'starter' | 'pro' | 'max';
+  requiredPlan: SaasPlanId;
 }
-const plans: Plan[] = [
-{
-  id: 'lite',
-  name: 'Lite',
-  category: 'FREE SWARM',
-  icon: ZapIcon,
-  description: 'Up to 50 agents. 5 free runs per day.',
-  meta: 'Available on all plans',
-  requiredPlan: 'lite'
-},
-{
-  id: 'starter',
-  name: 'Starter',
-  category: 'STARTER SWARM',
-  icon: RocketIcon,
-  description: 'Up to 200 agents. Balanced cost and depth.',
-  meta: 'Requires Starter plan or higher',
-  requiredPlan: 'starter'
-},
-{
-  id: 'pro',
-  name: 'Pro',
-  category: 'STANDARD SWARM',
-  icon: CrownIcon,
-  description: 'Up to 1,000 agents. Cost scales with complexity.',
-  meta: 'Requires Pro plan or higher',
-  requiredPlan: 'pro'
-},
-{
-  id: 'max',
-  name: 'Max',
-  category: 'ENTERPRISE SWARM',
-  icon: Building2Icon,
-  description: 'Up to 10,000 agents. Maximum adversarial depth.',
-  meta: 'Requires Max plan',
-  requiredPlan: 'max'
-}];
 
-const planRank: Record<Plan['requiredPlan'], number> = {
-  lite: 0,
-  starter: 1,
-  pro: 2,
-  max: 3
+const plans: Plan[] = saasPlans.map((tier) => ({
+  id: tier.id,
+  name: tier.name,
+  category:
+    tier.id === 'free'
+      ? 'FREE SWARM'
+      : tier.id === 'enterprise'
+        ? 'ENTERPRISE SWARM'
+        : `${tier.name.toUpperCase()} SWARM`,
+  icon: tier.icon,
+  description: `Up to ${tier.maxAgentsPerTask.toLocaleString()} agents · ${tier.creditAllowance}`,
+  meta:
+    tier.id === 'free'
+      ? 'Included on Free Plan'
+      : `Requires ${tier.name} plan or higher`,
+  requiredPlan: tier.id,
+}));
+
+const planRank: Record<SaasPlanId, number> = {
+  free: 0,
+  pro: 1,
+  business: 2,
+  enterprise: 3,
 };
-const CURRENT_USER_PLAN: Plan['requiredPlan'] = 'starter';
+const CURRENT_USER_PLAN: SaasPlanId = CURRENT_BILLING_PLAN_ID;
 
-const PLAN_AGENT_MAX: Record<Plan['id'], number> = {
-  lite: 50,
-  starter: 200,
-  pro: 1000,
-  max: 10000
-};
+const PLAN_AGENT_MAX = Object.fromEntries(
+  saasPlans.map((tier) => [tier.id, tier.maxAgentsPerTask]),
+) as Record<SaasPlanId, number>;
 
-const PLAN_AGENT_DEFAULT: Record<Plan['id'], number> = {
-  lite: 50,
-  starter: 200,
-  pro: 500,
-  max: 2000
+const PLAN_AGENT_DEFAULT: Record<SaasPlanId, number> = {
+  free: 5,
+  pro: 100,
+  business: 500,
+  enterprise: 2000,
 };
 
 function isAccessible(p: Plan) {
@@ -102,8 +83,8 @@ export function NewSwarm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [prompt, setPrompt] = useState('');
-  const [planId, setPlanId] = useState<Plan['id']>('starter');
-  const [agentCount, setAgentCount] = useState(PLAN_AGENT_DEFAULT.starter);
+  const [planId, setPlanId] = useState<Plan['id']>('free');
+  const [agentCount, setAgentCount] = useState(PLAN_AGENT_DEFAULT.free);
   const [isIgniting, setIsIgniting] = useState(false);
   const [igniteError, setIgniteError] = useState<string | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
@@ -234,9 +215,9 @@ export function NewSwarm() {
             <input
               id="agent-count"
               type="range"
-              min={10}
+              min={1}
               max={maxAgents}
-              step={planId === 'lite' ? 5 : 10}
+              step={planId === 'free' ? 1 : 10}
               value={agentCount}
               onChange={(e) => setAgentCount(Number(e.target.value))}
               disabled={isIgniting}

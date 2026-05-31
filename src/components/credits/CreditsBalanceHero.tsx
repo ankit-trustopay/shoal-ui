@@ -52,11 +52,11 @@ export function CreditsBalanceHero({
           </div>
 
           <p className="mt-4 max-w-lg text-sm text-gray-400 leading-relaxed">
-            Free tier wallet — simulated at{' '}
+            Free Plan wallet — mocked at{' '}
             <span className="font-semibold text-gray-200">
               {FREE_TIER_AVAILABLE_CREDITS} credits
-            </span>
-            . Swarm runs draw credits at 1 credit per 100 virtual humans deployed.
+            </span>{' '}
+            until billing is wired. Each virtual human costs exactly 1 credit.
           </p>
 
           <div className="mt-6 inline-flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">

@@ -100,7 +100,7 @@ export function PricingTierCards({ onUpgrade }: PricingTierCardsProps) {
                     isDark ? 'text-gray-400' : 'text-gray-500',
                   )}
                 >
-                  {tier.maxVirtualHumans.toLocaleString()} max VH
+                  {tier.maxAgentsPerTask.toLocaleString()} max agents
                 </MonoLabel>
               </div>
 

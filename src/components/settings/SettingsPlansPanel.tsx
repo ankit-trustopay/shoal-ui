@@ -4,21 +4,31 @@ import { CheckIcon } from 'lucide-react';
 import {
   settingsPlans,
   CURRENT_PLAN_ID,
+  getCurrentPlan,
   type SettingsPlan,
 } from '../../data/settings';
+import { FREE_TIER_PLAN_LABEL } from '../../data/creditsBilling';
 import { cn } from '../../lib/cn';
 import { BentoCard } from '../ui/BentoCard';
 import { MonoLabel } from '../ui/MonoLabel';
 
 export function SettingsPlansPanel() {
+  const current = getCurrentPlan();
+
   return (
     <div>
       <BentoCard className="p-6 mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <MonoLabel className="mb-1 block">Current Plan</MonoLabel>
-          <div className="text-2xl font-bold text-black tracking-tight">Starter</div>
+          <MonoLabel className="mb-1 block">Current plan</MonoLabel>
+          <div className="text-2xl font-bold text-black tracking-tight">
+            {current.id === 'free' ? FREE_TIER_PLAN_LABEL : current.name}
+          </div>
           <div className="text-sm text-gray-600 mt-1">
-            $20/month · Renews on Jun 1, 2026
+            {current.price}
+            {current.period}
+            {current.id === 'free'
+              ? ' · No renewal required'
+              : ' · Billing connects at checkout'}
           </div>
         </div>
         <Link
@@ -33,10 +43,10 @@ export function SettingsPlansPanel() {
         Compare plans
       </h2>
       <p className="text-gray-600 mb-6">
-        Upgrade or downgrade anytime. Bonus credits roll over.
+        Upgrade when you need more virtual humans per task or monthly credits.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {settingsPlans.map((plan) => (
           <PlanCard key={plan.id} plan={plan} />
         ))}
@@ -48,13 +58,20 @@ export function SettingsPlansPanel() {
 function PlanCard({ plan }: { plan: SettingsPlan }) {
   const Icon = plan.icon;
   const isCurrent = plan.id === CURRENT_PLAN_ID;
+  const planRank: Record<SettingsPlan['id'], number> = {
+    free: 0,
+    pro: 1,
+    business: 2,
+    enterprise: 3,
+  };
+  const isUpgrade = planRank[plan.id] > planRank[CURRENT_PLAN_ID];
 
   return (
     <BentoCard
       className={cn(
-        'p-6 flex flex-col relative',
+        'p-5 flex flex-col relative',
         isCurrent && '!border-2 !border-axiom',
-        !isCurrent && plan.recommended && 'border-axiom/50',
+        !isCurrent && plan.highlight === 'popular' && 'border-orange-200',
       )}
     >
       {isCurrent && (
@@ -64,22 +81,22 @@ function PlanCard({ plan }: { plan: SettingsPlan }) {
           </span>
         </div>
       )}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-3">
         <Icon size={18} className="text-axiom" />
         <MonoLabel>{plan.name}</MonoLabel>
       </div>
       <div className="flex items-baseline gap-1 mb-2">
-        <span className="text-3xl font-bold text-black tracking-tighter">
+        <span className="text-2xl font-bold text-black tracking-tighter">
           {plan.price}
         </span>
         <span className="text-sm text-gray-500">{plan.period}</span>
       </div>
-      <p className="text-sm text-gray-600 mb-5">{plan.description}</p>
-      <ul className="space-y-2 mb-6 flex-1">
-        {plan.features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-gray-700">
-            <CheckIcon size={14} className="text-axiom shrink-0 mt-1" />
-            <span>{f}</span>
+      <p className="text-xs text-gray-600 mb-4 leading-snug">{plan.tagline}</p>
+      <ul className="space-y-2 mb-5 flex-1">
+        {plan.features.map((feature) => (
+          <li key={feature} className="flex items-start gap-2 text-sm text-gray-700">
+            <CheckIcon size={14} className="text-axiom shrink-0 mt-0.5" />
+            <span>{feature}</span>
           </li>
         ))}
       </ul>
@@ -94,9 +111,9 @@ function PlanCard({ plan }: { plan: SettingsPlan }) {
       >
         {isCurrent
           ? 'Current plan'
-          : plan.id === 'lite'
-            ? 'Downgrade'
-            : `Upgrade to ${plan.name}`}
+          : isUpgrade
+            ? `Upgrade to ${plan.name}`
+            : 'Contact support'}
       </button>
     </BentoCard>
   );

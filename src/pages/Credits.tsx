@@ -7,6 +7,7 @@ import { CreditsBalanceHero } from '../components/credits/CreditsBalanceHero';
 import { PricingTierCards } from '../components/credits/PricingTierCards';
 import { BuyExtraCreditsPanel } from '../components/credits/BuyExtraCreditsPanel';
 import { CreditsUsageTable } from '../components/credits/CreditsUsageTable';
+import { HowCreditsWorkSection } from '../components/credits/HowCreditsWorkSection';
 import { BentoCard } from '../components/ui/BentoCard';
 import {
   FREE_TIER_AVAILABLE_CREDITS,
@@ -100,6 +101,8 @@ export function Credits() {
       <div className="mb-10 md:mb-12">
         <CreditsBalanceHero onBuyExtra={scrollToBuyExtra} balance={balance} />
       </div>
+
+      <HowCreditsWorkSection />
 
       <div className="mb-10 md:mb-14">
         <PricingTierCards onUpgrade={handleUpgrade} />
