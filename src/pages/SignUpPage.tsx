@@ -22,7 +22,7 @@ export function SignUpPage() {
             routing="path"
             path="/sign-up"
             signInUrl="/sign-in"
-            forceRedirectUrl="/app/new"
+            fallbackRedirectUrl="/app/new"
             appearance={clerkAuthAppearance}
           />
         </AuthPageLayout>

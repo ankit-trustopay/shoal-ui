@@ -29,10 +29,10 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/sign-in" element={<SignInPage />} />
-        <Route path="/sign-up" element={<SignUpPage />} />
-        <Route path="/signin" element={<Navigate to="/sign-in" replace />} />
-        <Route path="/signup" element={<Navigate to="/sign-up" replace />} />
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
+        <Route path="/signin/*" element={<Navigate to="/sign-in" replace />} />
+        <Route path="/signup/*" element={<Navigate to="/sign-up" replace />} />
 
         <Route path="/app/*" element={<ProtectedAppRoutes />} />
 
