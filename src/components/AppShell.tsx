@@ -37,7 +37,7 @@ export function AppShell({ children }: AppShellProps) {
     <div className="flex h-screen bg-[#FAFAFA]">
       <aside className="w-64 shrink-0 bg-[#FAFAFA]/95 backdrop-blur-md border-r border-gray-200/60 flex flex-col">
         <div className="px-5 py-6">
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to="/app/new" className="flex items-center gap-2.5">
             <span className="w-8 h-8 rounded-full bg-axiom text-white flex items-center justify-center text-sm font-bold">
               S
             </span>
