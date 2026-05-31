@@ -143,6 +143,7 @@ export function LiveSwarm() {
         managerText={managerMessage?.text ?? null}
         debateMessages={debateMessages}
         agentProfiles={agentProfiles}
+        evidence={swarm?.evidence ?? []}
         stats={swarmStats}
         sessionCode={sessionCode}
       />

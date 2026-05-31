@@ -13,9 +13,10 @@ import {
   type ConsoleTabId,
 } from '../../../data/liveConsoleMock';
 import type { AgentProfile } from '../../../lib/agentProfiles';
-import type { SwarmMessageRecord } from '../../../lib/api';
+import type { SwarmEvidenceRecord, SwarmMessageRecord } from '../../../lib/api';
 import { MonoLabel } from '../../ui/MonoLabel';
 import { AgentsTab } from './AgentsTab';
+import { EvidenceTab } from './EvidenceTab';
 import {
   formatCostCredits,
   votePercent,
@@ -28,6 +29,7 @@ interface EnterpriseLiveConsoleProps {
   managerText: string | null;
   debateMessages: SwarmMessageRecord[];
   agentProfiles: AgentProfile[];
+  evidence: SwarmEvidenceRecord[];
   stats: SwarmConsoleStats;
   sessionCode: string;
 }
@@ -345,6 +347,7 @@ export function EnterpriseLiveConsole({
   managerText,
   debateMessages,
   agentProfiles,
+  evidence,
   stats,
   sessionCode,
 }: EnterpriseLiveConsoleProps) {
@@ -353,6 +356,16 @@ export function EnterpriseLiveConsole({
   const displayPremise = premise ?? mock.premise;
 
   const statusLine = `${mock.statusLabel} • ${sessionCode} • ${mock.sessionDate}`;
+
+  const tabs = CONSOLE_TABS.map((tab) => {
+    if (tab.id === 'evidence' && evidence.length > 0) {
+      return { ...tab, count: evidence.length };
+    }
+    if (tab.id === 'agents' && agentProfiles.length > 0) {
+      return { ...tab, count: agentProfiles.length };
+    }
+    return tab;
+  });
 
   return (
     <div className="space-y-10 pb-20">
@@ -426,7 +439,7 @@ export function EnterpriseLiveConsole({
         className="flex flex-wrap gap-1 border-b border-gray-200"
         aria-label="Console sections"
       >
-        {CONSOLE_TABS.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
@@ -456,7 +469,9 @@ export function EnterpriseLiveConsole({
 
       <div className="pt-6">
         {activeTab === 'overview' && <OverviewTab stats={stats} />}
-        {activeTab === 'evidence' && <PlaceholderTab label="Evidence" />}
+        {activeTab === 'evidence' && (
+          <EvidenceTab evidence={evidence} loading={loading} />
+        )}
         {activeTab === 'agents' && (
           <AgentsTab agentProfiles={agentProfiles} loading={loading} />
         )}
