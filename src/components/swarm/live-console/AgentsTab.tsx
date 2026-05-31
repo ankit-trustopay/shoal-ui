@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { AGENT_PROFILES, type AgentProfile } from '../../../data/agentProfilesMock';
+import { ChevronRight, Users } from 'lucide-react';
+import type { AgentProfile } from '../../../lib/agentProfiles';
 import { AgentProfileModal } from './AgentProfileModal';
 import { MonoLabel } from '../../ui/MonoLabel';
 
@@ -15,7 +15,8 @@ function AgentCard({
     .split(' ')
     .map((part) => part[0])
     .join('')
-    .slice(0, 2);
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <button
@@ -52,8 +53,49 @@ function AgentCard({
   );
 }
 
-export function AgentsTab() {
+function AgentsEmptyState({ loading }: { loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+        {[1, 2, 3].map((key) => (
+          <div
+            key={key}
+            className="animate-pulse rounded-2xl border border-gray-200/80 bg-white p-6 h-[220px]"
+            aria-hidden
+          >
+            <div className="h-12 w-12 rounded-xl bg-gray-100 mb-5" />
+            <div className="h-5 w-2/3 rounded bg-gray-100 mb-2" />
+            <div className="h-4 w-1/2 rounded bg-gray-100" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/60 py-20 px-6 text-center">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400">
+        <Users size={28} />
+      </div>
+      <p className="text-sm font-semibold text-gray-700">
+        No profile data available for this swarm
+      </p>
+      <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
+        Older swarms may not include Synthetic Society dossiers. Re-deploy with the
+        latest engine to generate dynamic agent profiles.
+      </p>
+    </div>
+  );
+}
+
+interface AgentsTabProps {
+  agentProfiles: AgentProfile[];
+  loading?: boolean;
+}
+
+export function AgentsTab({ agentProfiles, loading = false }: AgentsTabProps) {
   const [selectedAgent, setSelectedAgent] = useState<AgentProfile | null>(null);
+  const hasProfiles = agentProfiles.length > 0;
 
   return (
     <div className="pt-2">
@@ -66,16 +108,26 @@ export function AgentsTab() {
             full CRM-style dossier.
           </p>
         </div>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-gray-400">
-          {AGENT_PROFILES.length} active agents
-        </span>
+        {hasProfiles && (
+          <span className="font-mono text-[10px] uppercase tracking-widest text-gray-400">
+            {agentProfiles.length} active agents
+          </span>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-        {AGENT_PROFILES.map((agent) => (
-          <AgentCard key={agent.id} agent={agent} onSelect={setSelectedAgent} />
-        ))}
-      </div>
+      {hasProfiles ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          {agentProfiles.map((agent) => (
+            <AgentCard
+              key={agent.id}
+              agent={agent}
+              onSelect={setSelectedAgent}
+            />
+          ))}
+        </div>
+      ) : (
+        <AgentsEmptyState loading={loading} />
+      )}
 
       <AgentProfileModal
         agent={selectedAgent}

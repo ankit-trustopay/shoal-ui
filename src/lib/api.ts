@@ -48,6 +48,7 @@ export interface SwarmRecord {
   votesNeutral?: number | null;
   runtime?: number | null;
   cost?: number | null;
+  agentProfiles?: unknown;
   createdAt: string;
   messages?: SwarmMessageRecord[];
   evidence?: SwarmEvidenceRecord[];

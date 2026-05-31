@@ -12,6 +12,7 @@ import {
   LIVE_CONSOLE_MOCK,
   type ConsoleTabId,
 } from '../../../data/liveConsoleMock';
+import type { AgentProfile } from '../../../lib/agentProfiles';
 import type { SwarmMessageRecord } from '../../../lib/api';
 import { MonoLabel } from '../../ui/MonoLabel';
 import { AgentsTab } from './AgentsTab';
@@ -26,6 +27,7 @@ interface EnterpriseLiveConsoleProps {
   premise: string | null;
   managerText: string | null;
   debateMessages: SwarmMessageRecord[];
+  agentProfiles: AgentProfile[];
   stats: SwarmConsoleStats;
   sessionCode: string;
 }
@@ -342,6 +344,7 @@ export function EnterpriseLiveConsole({
   premise,
   managerText,
   debateMessages,
+  agentProfiles,
   stats,
   sessionCode,
 }: EnterpriseLiveConsoleProps) {
@@ -454,7 +457,9 @@ export function EnterpriseLiveConsole({
       <div className="pt-6">
         {activeTab === 'overview' && <OverviewTab stats={stats} />}
         {activeTab === 'evidence' && <PlaceholderTab label="Evidence" />}
-        {activeTab === 'agents' && <AgentsTab />}
+        {activeTab === 'agents' && (
+          <AgentsTab agentProfiles={agentProfiles} loading={loading} />
+        )}
         {activeTab === 'debate' && <DebateTab messages={debateMessages} />}
         {activeTab === 'cost' && <PlaceholderTab label="Cost" />}
       </div>

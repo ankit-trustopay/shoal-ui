@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { PageContainer } from '../components/ui/PageContainer';
 import { EnterpriseLiveConsole } from '../components/swarm/live-console/EnterpriseLiveConsole';
 import { deriveSwarmStats } from '../components/swarm/live-console/swarmStats';
+import { parseAgentProfiles } from '../lib/agentProfiles';
 import { API_BASE, type SwarmRecord } from '../lib/api';
 
 function SwarmError({ message }: { message: string }) {
@@ -107,6 +108,11 @@ export function LiveSwarm() {
 
   const swarmStats = useMemo(() => deriveSwarmStats(swarm), [swarm]);
 
+  const agentProfiles = useMemo(
+    () => parseAgentProfiles(swarm?.agentProfiles),
+    [swarm?.agentProfiles],
+  );
+
   const sessionCode = useMemo(() => {
     if (!swarmId) return 'SWM_UNKNOWN';
     const compact = swarmId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
@@ -136,6 +142,7 @@ export function LiveSwarm() {
         premise={swarm?.premise ?? null}
         managerText={managerMessage?.text ?? null}
         debateMessages={debateMessages}
+        agentProfiles={agentProfiles}
         stats={swarmStats}
         sessionCode={sessionCode}
       />

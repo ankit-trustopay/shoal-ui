@@ -2,9 +2,11 @@ import React, { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MapPin, X } from 'lucide-react';
 import {
+  COGNITIVE_STAT_MAX,
   type AgentProfile,
   riskTolerancePercent,
-} from '../../../data/agentProfilesMock';
+  statBarPercent,
+} from '../../../lib/agentProfiles';
 
 interface AgentProfileModalProps {
   agent: AgentProfile | null;
@@ -14,7 +16,7 @@ interface AgentProfileModalProps {
 function StatBar({
   label,
   value,
-  max = 160,
+  max = COGNITIVE_STAT_MAX,
   colorClass = 'bg-orange-500',
 }: {
   label: string;
@@ -22,7 +24,7 @@ function StatBar({
   max?: number;
   colorClass?: string;
 }) {
-  const pct = Math.min(100, Math.round((value / max) * 100));
+  const pct = statBarPercent(value, max);
 
   return (
     <div>
@@ -30,7 +32,10 @@ function StatBar({
         <span className="text-xs font-mono uppercase tracking-widest text-gray-500">
           {label}
         </span>
-        <span className="text-sm font-bold text-gray-900 tabular-nums">{value}</span>
+        <span className="text-sm font-bold text-gray-900 tabular-nums">
+          {value}
+          <span className="text-xs font-normal text-gray-400 ml-1">/ {max}</span>
+        </span>
       </div>
       <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
         <div
@@ -96,7 +101,8 @@ export function AgentProfileModal({ agent, onClose }: AgentProfileModalProps) {
                   .split(' ')
                   .map((part) => part[0])
                   .join('')
-                  .slice(0, 2)}
+                  .slice(0, 2)
+                  .toUpperCase()}
               </div>
               <h2
                 id="agent-profile-title"
@@ -159,7 +165,9 @@ export function AgentProfileModal({ agent, onClose }: AgentProfileModalProps) {
               </section>
 
               <section className="rounded-2xl border border-orange-200/70 bg-orange-50/40 p-5">
-                <h3 className="text-sm font-bold text-orange-800 mb-3">Biases & heuristics</h3>
+                <h3 className="text-sm font-bold text-orange-800 mb-3">
+                  Biases & heuristics
+                </h3>
                 <p className="text-sm text-gray-800 leading-relaxed">{agent.biases}</p>
               </section>
             </div>
