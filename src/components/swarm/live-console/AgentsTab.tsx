@@ -56,7 +56,7 @@ function AgentCard({
 function AgentsEmptyState({ loading }: { loading: boolean }) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {[1, 2, 3].map((key) => (
           <div
             key={key}
@@ -116,7 +116,7 @@ export function AgentsTab({ agentProfiles, loading = false }: AgentsTabProps) {
       </div>
 
       {hasProfiles ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {agentProfiles.map((agent) => (
             <AgentCard
               key={agent.id}

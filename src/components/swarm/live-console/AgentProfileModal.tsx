@@ -150,7 +150,7 @@ export function AgentProfileModal({ agent, onClose }: AgentProfileModalProps) {
                 </section>
               )}
 
-              <section className="grid grid-cols-2 gap-4">
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="rounded-xl border border-gray-200/80 bg-gray-50/80 p-4">
                   <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">
                     Location

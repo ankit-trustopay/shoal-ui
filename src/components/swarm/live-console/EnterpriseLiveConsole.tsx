@@ -193,7 +193,7 @@ function VoteDistributionSection({ stats }: { stats: SwarmConsoleStats }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {columns.map((col) => (
           <div
             key={col.label}
@@ -286,7 +286,7 @@ function OverviewTab({
               From swarm research
             </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {evidence.map((item) => (
               <a
                 key={item.id}
@@ -408,7 +408,7 @@ export function EnterpriseLiveConsole({
       )}
 
       <section className="rounded-2xl border border-orange-100/80 bg-gradient-to-br from-orange-50/50 to-white p-6 sm:p-10 shadow-sm">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-orange-500 mb-5">
+        <p className="font-mono text-[10px] sm:text-[11px] font-semibold uppercase tracking-widest text-orange-500 mb-5 break-words">
           {statusLine}
         </p>
 
@@ -445,7 +445,7 @@ export function EnterpriseLiveConsole({
                 </p>
               )}
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-2 gap-3 md:flex md:flex-wrap">
               <StatBox label="Agents" value={stats.agentCount} />
               <StatBox
                 label="Sources"
@@ -476,7 +476,7 @@ export function EnterpriseLiveConsole({
       <VoteDistributionSection stats={stats} />
 
       <nav
-        className="flex flex-wrap gap-1 border-b border-gray-200"
+        className="-mx-1 flex gap-1 overflow-x-auto border-b border-gray-200 pb-px"
         aria-label="Console sections"
       >
         {tabs.map((tab) => {
@@ -486,7 +486,7 @@ export function EnterpriseLiveConsole({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-3.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+              className={`shrink-0 px-4 sm:px-5 py-3.5 text-sm font-semibold transition-colors border-b-2 -mb-px whitespace-nowrap ${
                 isActive
                   ? 'border-orange-500 text-orange-500'
                   : 'border-transparent text-gray-500 hover:text-gray-900'

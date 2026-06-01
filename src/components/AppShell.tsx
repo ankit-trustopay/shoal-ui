@@ -1,17 +1,19 @@
-import React from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { UserButton } from '@clerk/clerk-react';
-import { easeOutExpo } from '../lib/motion';
 import {
   SparklesIcon,
   HistoryIcon,
   CoinsIcon,
   SettingsIcon,
-  BookOpenIcon,
   ZapIcon,
+  MenuIcon,
 } from 'lucide-react';
+import { easeOutExpo } from '../lib/motion';
 import { UserAccountProvider, useUserAccount } from '../hooks/useUserAccount';
+import { AppSidebarNav } from './AppSidebarNav';
+import { MobileNavDrawer } from './MobileNavDrawer';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -24,85 +26,79 @@ const navItems = [
   { name: 'Settings', path: '/app/settings', icon: SettingsIcon },
 ];
 
-function ConsoleTopHeader() {
+function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const { credits, loading } = useUserAccount();
   const creditsLabel = loading ? '…' : credits.toLocaleString();
 
   return (
-    <header className="glass-sticky flex shrink-0 items-center justify-end gap-3 border-b border-gray-200/60 bg-[#FAFAFA]/95 px-4 sm:px-8 py-3 backdrop-blur-md">
-      <Link
-        to="/app/credits"
-        className="inline-flex items-center gap-1.5 rounded-full border border-gray-200/80 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:border-orange-200 hover:bg-orange-50/60"
-        aria-label="View credits and billing"
-      >
-        <ZapIcon size={14} className="text-orange-500 shrink-0" aria-hidden />
-        <span className="tabular-nums">{creditsLabel}</span>
-        <span className="font-medium text-gray-500">Credits</span>
-      </Link>
+    <header className="glass-sticky flex shrink-0 items-center justify-between gap-3 border-b border-gray-200/60 bg-[#FAFAFA]/95 px-4 sm:px-8 py-3 backdrop-blur-md">
+      <div className="flex min-w-0 items-center gap-2 md:gap-3">
+        <button
+          type="button"
+          onClick={onOpenMobileNav}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 md:hidden"
+          aria-label="Open navigation menu"
+        >
+          <MenuIcon size={22} aria-hidden />
+        </button>
+        <Link
+          to="/app/new"
+          className="flex items-center gap-2 md:hidden min-w-0"
+          aria-label="Shoal AI home"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-axiom text-sm font-bold text-white">
+            S
+          </span>
+          <span className="truncate text-sm font-bold tracking-tight text-black">
+            Shoal AI
+          </span>
+        </Link>
+      </div>
 
-      <UserButton
-        afterSignOutUrl="/"
-        appearance={{
-          elements: {
-            avatarBox: 'w-9 h-9 ring-2 ring-white shadow-sm',
-          },
-        }}
-      />
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <Link
+          to="/app/credits"
+          className="inline-flex items-center gap-1.5 rounded-full border border-gray-200/80 bg-white px-2.5 sm:px-3.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:border-orange-200 hover:bg-orange-50/60"
+          aria-label="View credits and billing"
+        >
+          <ZapIcon size={14} className="text-orange-500 shrink-0" aria-hidden />
+          <span className="tabular-nums">{creditsLabel}</span>
+          <span className="hidden min-[400px]:inline font-medium text-gray-500">Credits</span>
+        </Link>
+
+        <UserButton
+          afterSignOutUrl="/"
+          appearance={{
+            elements: {
+              avatarBox: 'w-9 h-9 ring-2 ring-white shadow-sm',
+            },
+          }}
+        />
+      </div>
     </header>
   );
 }
 
 function AppShellSidebar({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-[#FAFAFA]">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-gray-200/60 bg-[#FAFAFA]/95 backdrop-blur-md">
-        <div className="px-5 py-6">
-          <Link to="/app/new" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-axiom text-sm font-bold text-white">
-              S
-            </span>
-            <span className="text-base font-bold tracking-tight text-black">
-              Shoal AI
-            </span>
-          </Link>
-        </div>
-
-        <nav className="flex-1 space-y-1 px-3 py-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/app/new'}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${isActive ? 'bg-orange-50 text-axiom' : 'text-gray-600 hover:bg-gray-100/60 hover:text-black'}`
-                }
-              >
-                <Icon size={18} />
-                <span>{item.name}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        <div className="mt-auto border-t border-gray-200 px-3 py-4">
-          <Link
-            to="/product"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100/60 hover:text-black"
-          >
-            <BookOpenIcon size={16} />
-            <span>About the product</span>
-          </Link>
-        </div>
+    <div className="flex h-screen min-h-0 w-full bg-[#FAFAFA]">
+      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-gray-200/60 bg-[#FAFAFA]/95 backdrop-blur-md">
+        <AppSidebarNav items={navItems} />
       </aside>
 
-      <div className="flex flex-1 flex-col overflow-hidden bg-[#FAFAFA]">
-        <ConsoleTopHeader />
+      <MobileNavDrawer
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        items={navItems}
+      />
 
-        <main className="flex-1 overflow-y-auto">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#FAFAFA] w-full">
+        <ConsoleTopHeader onOpenMobileNav={() => setMobileNavOpen(true)} />
+
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}

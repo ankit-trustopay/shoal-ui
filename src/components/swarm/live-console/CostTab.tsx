@@ -62,7 +62,7 @@ export function CostTab({ stats }: { stats: SwarmConsoleStats }) {
   return (
     <div className="max-w-2xl">
       <div className="rounded-2xl border border-gray-200/80 bg-white shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between gap-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-6 py-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-4 sm:px-6 py-5">
           <div>
             <MonoLabel className="text-gray-500 mb-1 block">Compute receipt</MonoLabel>
             <h3 className="text-lg font-bold text-gray-900">Swarm cost breakdown</h3>
@@ -76,7 +76,7 @@ export function CostTab({ stats }: { stats: SwarmConsoleStats }) {
           {rows.map((row) => (
             <li
               key={row.key}
-              className="flex items-start justify-between gap-4 px-6 py-5 hover:bg-gray-50/60 transition-colors"
+              className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between px-4 sm:px-6 py-5 hover:bg-gray-50/60 transition-colors"
             >
               <div className="flex items-start gap-4 min-w-0">
                 <div
@@ -100,8 +100,8 @@ export function CostTab({ stats }: { stats: SwarmConsoleStats }) {
           ))}
         </ul>
 
-        <div className="border-t border-gray-200 bg-gradient-to-br from-orange-50/80 to-white px-6 py-6">
-          <div className="flex items-end justify-between gap-4">
+        <div className="border-t border-gray-200 bg-gradient-to-br from-orange-50/80 to-white px-4 sm:px-6 py-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-1">
                 Total cost

@@ -34,7 +34,7 @@ function EvidenceCard({ item }: { item: SwarmEvidenceRecord }) {
 
 function EvidenceSkeletonGrid() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       {[1, 2, 3].map((key) => (
         <div
           key={key}
@@ -97,7 +97,7 @@ export function EvidenceTab({ evidence, loading = false }: EvidenceTabProps) {
       {loading && !hasEvidence ? (
         <EvidenceSkeletonGrid />
       ) : hasEvidence ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {evidence.map((item) => (
             <EvidenceCard key={item.id} item={item} />
           ))}

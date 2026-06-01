@@ -226,26 +226,26 @@ export function NewSwarm() {
         </div>
 
         {/* Prompt composer */}
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <label
             htmlFor="ai-model"
             className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500"
           >
             AI Model
           </label>
-          <div className="relative" ref={modelRef}>
+          <div className="relative w-full sm:w-auto" ref={modelRef}>
             <button
               id="ai-model"
               type="button"
               onClick={() => setModelOpen((open) => !open)}
               disabled={isIgniting}
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="inline-flex w-full sm:w-auto items-center justify-between gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               {activeModel.label}
-              <ChevronDownIcon size={14} className="text-gray-400" />
+              <ChevronDownIcon size={14} className="text-gray-400 shrink-0" />
             </button>
             {modelOpen && (
-              <div className="absolute right-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+              <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full z-20 mt-2 w-full sm:w-72 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
                 {SWARM_MODELS.map((model) => {
                   const isSelected = model.id === modelId;
                   return (
@@ -410,8 +410,8 @@ export function NewSwarm() {
           }
 
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-4 pb-4 pt-1 gap-3">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-3 px-4 pb-4 pt-1 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-1">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -438,12 +438,12 @@ export function NewSwarm() {
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="relative" ref={planRef}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 w-full sm:w-auto">
+              <div className="relative w-full sm:w-auto" ref={planRef}>
                 <button
                   type="button"
                   onClick={() => setPlanOpen((v) => !v)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
                   
                   <ActiveIcon size={13} className="text-axiom" />
                   {activePlan.name}
@@ -535,7 +535,7 @@ export function NewSwarm() {
                 type="button"
                 onClick={() => void handleIgniteSwarm()}
                 disabled={!canIgnite}
-                className="inline-flex items-center gap-1.5 bg-axiom text-white rounded-full px-4 py-2 text-sm font-semibold hover:bg-orange-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 bg-axiom text-white rounded-full px-4 py-2.5 text-sm font-semibold hover:bg-orange-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                 {isIgniting
                   ? 'Igniting...'
                   : insufficientCredits
