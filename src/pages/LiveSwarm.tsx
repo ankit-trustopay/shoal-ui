@@ -91,6 +91,7 @@ export function LiveSwarm() {
         agentProfiles={agentProfiles}
         evidence={swarm?.evidence ?? []}
         resultData={swarm?.resultData ?? null}
+        debateTranscript={swarm?.debateTranscript ?? null}
         status={swarm?.status ?? null}
         createdAt={swarm?.createdAt ?? null}
         stats={swarmStats}

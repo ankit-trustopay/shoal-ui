@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { easeOutExpo } from '../lib/motion';
 import { UserAccountProvider, useUserAccount } from '../hooks/useUserAccount';
+import { ClerkAuthBridge } from './auth/ClerkAuthBridge';
 import { AppSidebarNav } from './AppSidebarNav';
 import { MobileNavDrawer } from './MobileNavDrawer';
 import { UserAccountMenu } from './UserAccountMenu';
@@ -27,8 +28,8 @@ const navItems = [
 ];
 
 function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
-  const { credits, loading } = useUserAccount();
-  const creditsLabel = loading ? '…' : credits.toLocaleString();
+  const { credits, loading, error: accountError } = useUserAccount();
+  const creditsLabel = loading ? '…' : accountError ? '—' : credits.toLocaleString();
 
   return (
     <header className="glass-sticky flex shrink-0 items-center justify-between gap-3 border-b border-gray-200/60 bg-[#FAFAFA]/95 px-4 sm:px-8 py-3 backdrop-blur-md">
@@ -113,6 +114,7 @@ function AppShellSidebar({ children }: { children: React.ReactNode }) {
 export function AppShell({ children }: AppShellProps) {
   return (
     <UserAccountProvider>
+      <ClerkAuthBridge />
       <AppShellSidebar>{children}</AppShellSidebar>
     </UserAccountProvider>
   );

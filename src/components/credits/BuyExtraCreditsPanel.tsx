@@ -4,7 +4,11 @@ import { motion } from 'framer-motion';
 import { MonoLabel } from '../ui/MonoLabel';
 import { creditTopUpPacks } from '../../data/creditsBilling';
 
-export function BuyExtraCreditsPanel() {
+interface BuyExtraCreditsPanelProps {
+  onBuyCredits?: () => void;
+}
+
+export function BuyExtraCreditsPanel({ onBuyCredits }: BuyExtraCreditsPanelProps) {
   return (
     <section
       id="buy-extra-credits"
@@ -47,6 +51,7 @@ export function BuyExtraCreditsPanel() {
               <p className="text-sm text-gray-600 mt-1 mb-4">${pack.price}</p>
               <button
                 type="button"
+                onClick={onBuyCredits}
                 className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-black transition-colors"
               >
                 <CoinsIcon size={14} aria-hidden />

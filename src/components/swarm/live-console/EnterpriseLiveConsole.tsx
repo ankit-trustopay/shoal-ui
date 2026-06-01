@@ -33,6 +33,7 @@ interface EnterpriseLiveConsoleProps {
   agentProfiles: AgentProfile[];
   evidence: SwarmEvidenceRecord[];
   resultData: unknown;
+  debateTranscript?: unknown;
   status: SwarmStatus | null;
   createdAt: string | null;
   stats: SwarmConsoleStats;
@@ -331,6 +332,7 @@ export function EnterpriseLiveConsole({
   agentProfiles,
   evidence,
   resultData,
+  debateTranscript,
   status,
   createdAt,
   stats,
@@ -345,9 +347,9 @@ export function EnterpriseLiveConsole({
     .filter(Boolean)
     .join(' • ');
 
-  const debateTranscript = useMemo(
-    () => resolveDebateTranscript(resultData),
-    [resultData],
+  const debateTranscriptEntries = useMemo(
+    () => resolveDebateTranscript(resultData, debateTranscript),
+    [resultData, debateTranscript],
   );
 
   const tabs = CONSOLE_TABS.map((tab) => {
@@ -502,7 +504,7 @@ export function EnterpriseLiveConsole({
           />
         )}
         {activeTab === 'debate' && (
-          <DebateTab messages={debateMessages} transcript={debateTranscript} />
+          <DebateTab messages={debateMessages} transcript={debateTranscriptEntries} />
         )}
         {activeTab === 'cost' && <CostTab stats={stats} />}
       </div>

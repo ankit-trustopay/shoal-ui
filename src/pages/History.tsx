@@ -82,8 +82,12 @@ export function History() {
         }
       } catch (err) {
         if (!cancelled) {
+          const detail =
+            err instanceof Error ? err.message : 'Failed to load swarm history';
           setError(
-            err instanceof Error ? err.message : 'Failed to load swarm history',
+            detail.includes('Failed to load')
+              ? `${detail}. Please refresh.`
+              : `Failed to load swarm history. Please refresh. (${detail})`,
           );
           setSwarms([]);
         }

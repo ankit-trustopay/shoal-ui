@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckIcon } from 'lucide-react';
 import { PageContainer } from '../components/ui/PageContainer';
@@ -14,26 +14,45 @@ import { formatPlanLabel } from '../lib/planLabels';
 import { listSwarms, type SwarmHistoryListItem } from '../lib/api';
 import type { BillingTier } from '../data/creditsBilling';
 
+const WALLET_ERROR_FALLBACK = 'Failed to load wallet. Please refresh.';
+const USAGE_ERROR_FALLBACK = 'Failed to load usage history. Please refresh.';
+
 export function Credits() {
-  const buySectionRef = useRef<HTMLDivElement>(null);
-  const { credits, plan, planId, loading: accountLoading, error: accountError } =
-    useUserAccount();
+  const {
+    credits,
+    plan,
+    planId,
+    loading: accountLoading,
+    error: accountError,
+  } = useUserAccount();
   const [swarms, setSwarms] = useState<SwarmHistoryListItem[]>([]);
   const [usageLoading, setUsageLoading] = useState(true);
   const [usageError, setUsageError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; key: number } | null>(null);
+
+  const walletErrorMessage =
+    !accountLoading && accountError ? WALLET_ERROR_FALLBACK : null;
 
   const flashToast = useCallback((msg: string) => {
     setToast({ msg, key: Date.now() });
     window.setTimeout(() => setToast(null), 2400);
   }, []);
 
+  const handleBuyCredits = useCallback(() => {
+    flashToast('Credit purchases are coming soon.');
+  }, [flashToast]);
+
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
+      if (accountLoading) {
+        return;
+      }
+
       setUsageLoading(true);
       setUsageError(null);
+
       try {
         const data = await listSwarms();
         if (!cancelled) {
@@ -42,7 +61,7 @@ export function Credits() {
       } catch (err) {
         if (!cancelled) {
           setUsageError(
-            err instanceof Error ? err.message : 'Failed to load usage history',
+            err instanceof Error ? err.message : USAGE_ERROR_FALLBACK,
           );
           setSwarms([]);
         }
@@ -54,14 +73,11 @@ export function Credits() {
     }
 
     void load();
+
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  const scrollToBuyExtra = () => {
-    buySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  }, [accountLoading]);
 
   const handleUpgrade = (tier: BillingTier) => {
     flashToast(`${tier.name} checkout will open when billing is connected`);
@@ -93,9 +109,9 @@ export function Credits() {
         className="mb-8"
       />
 
-      {accountError && (
+      {walletErrorMessage && !accountLoading && (
         <BentoCard className="mb-6 rounded-2xl border-red-200 bg-red-50 p-5">
-          <p className="text-sm font-semibold text-red-800">{accountError}</p>
+          <p className="text-sm font-semibold text-red-800">{walletErrorMessage}</p>
         </BentoCard>
       )}
 
@@ -104,7 +120,8 @@ export function Credits() {
           balance={credits}
           planLabel={formatPlanLabel(plan)}
           loading={accountLoading}
-          onBuyExtra={scrollToBuyExtra}
+          error={walletErrorMessage}
+          onBuyExtra={handleBuyCredits}
         />
       </div>
 
@@ -114,8 +131,8 @@ export function Credits() {
         <PricingTierCards currentPlanId={planId} onUpgrade={handleUpgrade} />
       </div>
 
-      <div ref={buySectionRef} className="mb-10 md:mb-14">
-        <BuyExtraCreditsPanel />
+      <div className="mb-10 md:mb-14">
+        <BuyExtraCreditsPanel onBuyCredits={handleBuyCredits} />
       </div>
 
       <section className="mb-4" aria-labelledby="recent-usage-heading">
@@ -129,7 +146,7 @@ export function Credits() {
           Credit draws from your latest swarms via the live API.
         </p>
 
-        {usageError && (
+        {usageError && !usageLoading && (
           <BentoCard className="mb-6 rounded-2xl border-red-200 bg-red-50 p-5">
             <p className="text-sm font-semibold text-red-800">{usageError}</p>
           </BentoCard>

@@ -7,6 +7,7 @@ interface CreditsBalanceHeroProps {
   balance: number;
   planLabel: string;
   loading?: boolean;
+  error?: string | null;
   onBuyExtra: () => void;
 }
 
@@ -14,8 +15,12 @@ export function CreditsBalanceHero({
   balance,
   planLabel,
   loading = false,
+  error = null,
   onBuyExtra,
 }: CreditsBalanceHeroProps) {
+  const showSkeleton = loading && !error;
+  const buyDisabled = showSkeleton || Boolean(error);
+
   return (
     <section className="relative overflow-hidden rounded-2xl border border-gray-900 bg-gradient-to-br from-gray-950 via-gray-900 to-black p-6 sm:p-8 md:p-10 shadow-bento">
       <div
@@ -36,7 +41,7 @@ export function CreditsBalanceHero({
 
           <div className="flex flex-wrap items-baseline gap-3">
             <span className="text-5xl sm:text-6xl md:text-7xl font-bold text-white tracking-tighter leading-none tabular-nums">
-              {loading ? '…' : <CountUp value={balance} duration={0.7} />}
+              {showSkeleton ? '…' : error ? '—' : <CountUp value={balance} duration={0.7} />}
             </span>
             <span className="text-lg sm:text-xl font-medium text-gray-400">
               Credits
@@ -44,17 +49,24 @@ export function CreditsBalanceHero({
           </div>
 
           <p className="mt-4 max-w-lg text-sm text-gray-400 leading-relaxed">
-            <span className="font-semibold text-gray-200">{planLabel}</span> ·{' '}
-            {loading
-              ? 'Loading wallet…'
-              : 'Each virtual human costs exactly 1 credit. Balance syncs from your ledger.'}
+            {error ? (
+              <span className="font-semibold text-red-300">{error}</span>
+            ) : (
+              <>
+                <span className="font-semibold text-gray-200">{planLabel}</span> ·{' '}
+                {showSkeleton
+                  ? 'Loading wallet…'
+                  : 'Each virtual human costs exactly 1 credit. Balance syncs from your ledger.'}
+              </>
+            )}
           </p>
         </div>
 
         <button
           type="button"
           onClick={onBuyExtra}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-400 hover:shadow-orange-400/30 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+          disabled={buyDisabled}
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-400 hover:shadow-orange-400/30 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-orange-500"
         >
           <CoinsIcon size={16} aria-hidden />
           Buy Credits
