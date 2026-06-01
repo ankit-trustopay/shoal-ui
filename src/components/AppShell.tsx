@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { UserButton } from '@clerk/clerk-react';
 import {
   SparklesIcon,
   HistoryIcon,
@@ -14,6 +13,7 @@ import { easeOutExpo } from '../lib/motion';
 import { UserAccountProvider, useUserAccount } from '../hooks/useUserAccount';
 import { AppSidebarNav } from './AppSidebarNav';
 import { MobileNavDrawer } from './MobileNavDrawer';
+import { UserAccountMenu } from './UserAccountMenu';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -66,14 +66,7 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
           <span className="hidden min-[400px]:inline font-medium text-gray-500">Credits</span>
         </Link>
 
-        <UserButton
-          afterSignOutUrl="/"
-          appearance={{
-            elements: {
-              avatarBox: 'w-9 h-9 ring-2 ring-white shadow-sm',
-            },
-          }}
-        />
+        <UserAccountMenu />
       </div>
     </header>
   );
