@@ -245,7 +245,7 @@ export function NewSwarm() {
               <ChevronDownIcon size={14} className="text-gray-400 shrink-0" />
             </button>
             {modelOpen && (
-              <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full z-20 mt-2 w-full sm:w-72 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+              <div className="global-overlay absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-72 overflow-hidden rounded-xl isolate">
                 {SWARM_MODELS.map((model) => {
                   const isSelected = model.id === modelId;
                   return (
@@ -451,7 +451,7 @@ export function NewSwarm() {
                 </button>
 
                 {planOpen &&
-                <div className="absolute bottom-full right-0 mb-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-20 overflow-hidden">
+                <div className="global-overlay absolute bottom-full right-0 mb-2 w-80 overflow-hidden rounded-xl isolate">
                     <div className="px-4 py-2.5 border-b border-gray-100">
                       <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
                         Swarm Tier

@@ -23,4 +23,12 @@ body {
   .glass-sticky {
     @apply bg-white/80 backdrop-blur-md border-gray-200/60;
   }
+
+  /**
+   * Standard surface for floating UI (dropdowns, popovers, menus).
+   * Always pair portaled/fixed panels with this class — never rely on semi-transparent parents.
+   */
+  .global-overlay {
+    @apply bg-white dark:bg-gray-900 z-50 shadow-xl border border-gray-100;
+  }
 }
