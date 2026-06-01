@@ -7,7 +7,9 @@ import type {
   SwarmMessageRecord,
   SwarmStatus,
 } from '../../../lib/api';
+import { resolveDebateTranscript } from '../../../lib/debateTranscript';
 import { parseSwarmOverview } from '../../../lib/swarmOverview';
+import { DebateTab } from './DebateTab';
 import { MonoLabel } from '../../ui/MonoLabel';
 import { AgentsTab } from './AgentsTab';
 import { CostTab } from './CostTab';
@@ -319,39 +321,6 @@ function OverviewTab({
   );
 }
 
-function DebateTab({ messages }: { messages: SwarmMessageRecord[] }) {
-  if (messages.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 py-16 text-center">
-        <p className="text-sm text-gray-500">
-          No agent arguments yet. The swarm is still deliberating.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <ul className="space-y-4 pt-2">
-      {messages.map((message, index) => (
-        <li
-          key={message.id}
-          className="rounded-xl border border-gray-200/80 bg-white p-6 sm:p-7 shadow-sm"
-        >
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <span className="font-semibold text-orange-500">{message.role}</span>
-            <span className="font-mono text-[10px] text-gray-400">
-              Agent {String(index + 1).padStart(2, '0')}
-            </span>
-          </div>
-          <p className="text-sm sm:text-base text-gray-800 leading-relaxed">
-            {message.text}
-          </p>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export function EnterpriseLiveConsole({
   swarmId,
   loading,
@@ -375,6 +344,11 @@ export function EnterpriseLiveConsole({
   const statusLine = [statusLabel, sessionCode, sessionDate]
     .filter(Boolean)
     .join(' • ');
+
+  const debateTranscript = useMemo(
+    () => resolveDebateTranscript(resultData),
+    [resultData],
+  );
 
   const tabs = CONSOLE_TABS.map((tab) => {
     if (tab.id === 'evidence' && evidence.length > 0) {
@@ -527,7 +501,9 @@ export function EnterpriseLiveConsole({
             loading={showDeliberating || loading}
           />
         )}
-        {activeTab === 'debate' && <DebateTab messages={debateMessages} />}
+        {activeTab === 'debate' && (
+          <DebateTab messages={debateMessages} transcript={debateTranscript} />
+        )}
         {activeTab === 'cost' && <CostTab stats={stats} />}
       </div>
     </div>
