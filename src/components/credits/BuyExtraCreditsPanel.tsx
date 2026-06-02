@@ -1,14 +1,21 @@
-import React from 'react';
-import { CoinsIcon } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useMemo, useState } from 'react';
+import { CreditCard, CoinsIcon, SparklesIcon } from 'lucide-react';
 import { MonoLabel } from '../ui/MonoLabel';
-import { creditTopUpPacks } from '../../data/creditsBilling';
 
 interface BuyExtraCreditsPanelProps {
   onBuyCredits?: () => void;
 }
 
 export function BuyExtraCreditsPanel({ onBuyCredits }: BuyExtraCreditsPanelProps) {
+  const [usd, setUsd] = useState(25);
+
+  const clampedUsd = useMemo(() => {
+    const safe = Number.isFinite(usd) ? usd : 5;
+    return Math.min(100, Math.max(5, Math.round(safe)));
+  }, [usd]);
+
+  const credits = useMemo(() => clampedUsd * 200, [clampedUsd]);
+
   return (
     <section
       id="buy-extra-credits"
@@ -16,50 +23,96 @@ export function BuyExtraCreditsPanel({ onBuyCredits }: BuyExtraCreditsPanelProps
     >
       <MonoLabel className="mb-2 block">Top-up</MonoLabel>
       <h2 className="text-xl font-bold text-black tracking-tight mb-1">
-        Buy extra credits
+        Custom Top-Up Calculator
       </h2>
       <p className="text-sm text-gray-600 mb-6 max-w-xl">
-        One-time packs add to your balance instantly. Stripe checkout coming soon.
+        Choose any amount between $5–$100. Exchange rate: $1 = 200 credits.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {creditTopUpPacks.map((pack, index) => {
-          const isPopular = index === 1;
+      <div className="rounded-2xl border border-gray-200/80 bg-gradient-to-br from-gray-50/60 to-white p-5 sm:p-6">
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <label className="block w-full sm:max-w-xs">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                Dollar amount (min $5)
+              </span>
+              <div className="mt-2 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-orange-500/25">
+                <span className="text-sm font-semibold text-gray-500">$</span>
+                <input
+                  type="number"
+                  min={5}
+                  value={usd}
+                  onChange={(e) => setUsd(Number(e.target.value))}
+                  className="w-full bg-transparent text-sm font-semibold text-gray-900 tabular-nums focus:outline-none"
+                  inputMode="numeric"
+                />
+              </div>
+            </label>
 
-          return (
-            <motion.div
-              key={pack.id}
-              whileHover={{ y: -2 }}
-              className={`relative rounded-xl border p-5 ${
-                isPopular
-                  ? 'border-orange-500 bg-orange-50/50'
-                  : 'border-gray-200 bg-gray-50/30'
-              }`}
-            >
-              {isPopular && (
-                <span className="absolute -top-2.5 left-4 font-mono text-[9px] font-semibold uppercase tracking-widest bg-orange-500 text-white px-2 py-0.5 rounded">
-                  Best value
-                </span>
-              )}
-              <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-2">
-                {pack.label}
-              </p>
-              <p className="text-2xl font-bold text-black tracking-tighter tabular-nums">
-                {pack.credits.toLocaleString()}
-                <span className="text-sm font-medium text-gray-500 ml-1">cr</span>
-              </p>
-              <p className="text-sm text-gray-600 mt-1 mb-4">${pack.price}</p>
-              <button
-                type="button"
-                onClick={onBuyCredits}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-black transition-colors"
-              >
-                <CoinsIcon size={14} aria-hidden />
-                Buy Credits
-              </button>
-            </motion.div>
-          );
-        })}
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
+                <SparklesIcon size={14} className="text-orange-600" aria-hidden />
+                Instant calculation
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                Top-up slider
+              </span>
+              <span className="font-mono text-xs font-semibold tabular-nums text-gray-700">
+                ${clampedUsd} → {credits.toLocaleString()} credits
+              </span>
+            </div>
+            <input
+              type="range"
+              min={5}
+              max={100}
+              step={1}
+              value={clampedUsd}
+              onChange={(e) => setUsd(Number(e.target.value))}
+              className="w-full h-1.5 accent-orange-500 cursor-pointer"
+            />
+          </div>
+
+          <div className="rounded-xl border border-gray-200/70 bg-white px-4 py-3">
+            <p className="text-sm text-gray-700">
+              For{' '}
+              <span className="font-semibold tabular-nums text-gray-900">
+                ${clampedUsd}
+              </span>
+              , you will receive{' '}
+              <span className="font-semibold tabular-nums text-gray-900">
+                {credits.toLocaleString()}
+              </span>{' '}
+              Credits.
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Credits are added to your vault after successful payment.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onBuyCredits}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-black"
+          >
+            <CreditCard size={16} aria-hidden />
+            Pay ${clampedUsd} with Stripe
+          </button>
+
+          <div className="flex items-center justify-between gap-3 text-xs text-gray-500">
+            <span className="inline-flex items-center gap-1.5">
+              <CoinsIcon size={14} className="text-gray-400" aria-hidden />
+              $1 = 200 Credits
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-widest">
+              Secure checkout
+            </span>
+          </div>
+        </div>
       </div>
     </section>
   );
