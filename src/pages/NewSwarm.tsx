@@ -11,16 +11,22 @@ import {
 } from 'lucide-react';
 import { SwarmIgnitionProgress } from '../components/swarm/live-console/SwarmIgnitionProgress';
 import { createSwarm } from '../lib/api';
-import {
-  DEFAULT_SWARM_MODEL,
-  SWARM_MODELS,
-  type SwarmModelId,
-} from '../lib/swarmModels';
 import { useUserAccount } from '../hooks/useUserAccount';
 import {
   saasPlans,
   type SaasPlanId,
 } from '../data/creditsBilling';
+
+type CreditModelTier = 'lite' | 'plus';
+
+const CREDIT_MODEL_OPTIONS: Array<{
+  id: CreditModelTier;
+  label: string;
+  creditsPerAgent: number;
+}> = [
+  { id: 'lite', label: '🧠 Lite Model (1 cr/agent)', creditsPerAgent: 1 },
+  { id: 'plus', label: '🧠 Plus Model (5 cr/agent)', creditsPerAgent: 5 },
+];
 
 const examplePrompts = [
   'Should we raise a Series A now or extend runway 9 months and chase $4M ARR first?',
@@ -91,7 +97,7 @@ export function NewSwarm() {
   const [prompt, setPrompt] = useState('');
   const [planId, setPlanId] = useState<Plan['id']>('free');
   const [agentCount, setAgentCount] = useState(PLAN_AGENT_DEFAULT.free);
-  const [modelId, setModelId] = useState<SwarmModelId>(DEFAULT_SWARM_MODEL);
+  const [modelTier, setModelTier] = useState<CreditModelTier>('lite');
   const [modelOpen, setModelOpen] = useState(false);
   const modelRef = useRef<HTMLDivElement>(null);
   const [isIgniting, setIsIgniting] = useState(false);
@@ -103,13 +109,21 @@ export function NewSwarm() {
   const [linkInputOpen, setLinkInputOpen] = useState(false);
   const [linkValue, setLinkValue] = useState('');
   const [attachedLinks, setAttachedLinks] = useState<string[]>([]);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [targetAudience, setTargetAudience] = useState('');
+  const [pricePoint, setPricePoint] = useState('');
+  const [marketingBudget, setMarketingBudget] = useState('');
   const activePlan = plans.find((p) => p.id === planId) ?? plans[0];
   const ActiveIcon = activePlan.icon;
   const activeModel =
-    SWARM_MODELS.find((model) => model.id === modelId) ?? SWARM_MODELS[0];
+    CREDIT_MODEL_OPTIONS.find((model) => model.id === modelTier) ??
+    CREDIT_MODEL_OPTIONS[0];
   const maxAgents = PLAN_AGENT_MAX[planId];
-  const insufficientCredits = agentCount > credits;
-  const canIgnite = prompt.trim().length > 0 && !isIgniting && !insufficientCredits;
+  const estimatedCost = agentCount * activeModel.creditsPerAgent;
+  const insufficientCredits = estimatedCost > credits;
+  const canIgnite =
+    prompt.trim().length > 0 && !isIgniting && !insufficientCredits;
+  const freePlanWarning = planId === 'free' && agentCount > 50;
 
   useEffect(() => {
     const query = searchParams.get('query');
@@ -140,7 +154,7 @@ export function NewSwarm() {
 
   const handleIgniteSwarm = useCallback(async () => {
     const premise = prompt.trim();
-    if (!premise || isIgniting || agentCount > credits) return;
+    if (!premise || isIgniting || estimatedCost > credits) return;
 
     setIsIgniting(true);
     setIgniteError(null);
@@ -149,7 +163,7 @@ export function NewSwarm() {
       const { swarmId } = await createSwarm({
         premise,
         agentCount,
-        model: modelId,
+        model: modelTier,
       });
       await refresh();
       navigate(`/app/live?swarmId=${encodeURIComponent(swarmId)}`);
@@ -160,7 +174,7 @@ export function NewSwarm() {
     } finally {
       setIsIgniting(false);
     }
-  }, [prompt, agentCount, modelId, credits, isIgniting, navigate, refresh]);
+  }, [prompt, agentCount, modelTier, credits, estimatedCost, isIgniting, navigate, refresh]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -231,7 +245,7 @@ export function NewSwarm() {
             htmlFor="ai-model"
             className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500"
           >
-            AI Model
+            Credit model
           </label>
           <div className="relative w-full sm:w-auto" ref={modelRef}>
             <button
@@ -246,14 +260,14 @@ export function NewSwarm() {
             </button>
             {modelOpen && (
               <div className="global-overlay absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-72 overflow-hidden rounded-xl isolate">
-                {SWARM_MODELS.map((model) => {
-                  const isSelected = model.id === modelId;
+                {CREDIT_MODEL_OPTIONS.map((model) => {
+                  const isSelected = model.id === modelTier;
                   return (
                     <button
                       key={model.id}
                       type="button"
                       onClick={() => {
-                        setModelId(model.id);
+                        setModelTier(model.id);
                         setModelOpen(false);
                       }}
                       className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors ${
@@ -262,7 +276,7 @@ export function NewSwarm() {
                           : 'text-gray-800 hover:bg-gray-50'
                       }`}
                     >
-                      {model.label}
+                      <span className="truncate pr-3">{model.label}</span>
                       {isSelected && <CheckIcon size={14} className="text-axiom" />}
                     </button>
                   );
@@ -279,6 +293,59 @@ export function NewSwarm() {
             rows={4}
             placeholder="e.g. Should we expand into the EU market this quarter, or wait until we hit $4M ARR and have clearer regulatory footing?"
             className="w-full bg-transparent px-6 pt-5 pb-3 text-base text-black placeholder:text-gray-400 focus:outline-none resize-none leading-relaxed" />
+
+          {/* Advanced variables */}
+          <div className="px-6 pb-4 border-t border-gray-100 pt-4">
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((v) => !v)}
+              className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-50"
+            >
+              Advanced Variables
+              <ChevronDownIcon
+                size={16}
+                className={`text-gray-400 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {advancedOpen && (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <label className="block">
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                    Target Audience
+                  </span>
+                  <input
+                    value={targetAudience}
+                    onChange={(e) => setTargetAudience(e.target.value)}
+                    placeholder="e.g. SMB founders"
+                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30"
+                  />
+                </label>
+                <label className="block">
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                    Price Point
+                  </span>
+                  <input
+                    value={pricePoint}
+                    onChange={(e) => setPricePoint(e.target.value)}
+                    placeholder="e.g. $49/mo"
+                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30"
+                  />
+                </label>
+                <label className="block">
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                    Marketing Budget
+                  </span>
+                  <input
+                    value={marketingBudget}
+                    onChange={(e) => setMarketingBudget(e.target.value)}
+                    placeholder="e.g. $5k/mo"
+                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30"
+                  />
+                </label>
+              </div>
+            )}
+          </div>
 
           {/* Agent count */}
           <div className="px-6 pb-4 border-t border-gray-100 pt-4">
@@ -301,15 +368,30 @@ export function NewSwarm() {
               value={agentCount}
               onChange={(e) => setAgentCount(Number(e.target.value))}
               disabled={isIgniting}
-              className="w-full h-1.5 accent-axiom cursor-pointer disabled:opacity-50"
+              className={`w-full h-1.5 cursor-pointer disabled:opacity-50 ${
+                freePlanWarning ? 'accent-orange-500' : 'accent-axiom'
+              }`}
             />
             <p className="mt-2 text-xs text-gray-500">
               Up to {maxAgents.toLocaleString()} agents on {activePlan.name} ·{' '}
               {credits.toLocaleString()} credits available
             </p>
+            <p className="mt-2 text-xs text-gray-700">
+              Running <span className="font-semibold tabular-nums">{agentCount.toLocaleString()}</span>{' '}
+              agents will cost exactly{' '}
+              <span className="font-semibold tabular-nums">
+                {estimatedCost.toLocaleString()}
+              </span>{' '}
+              Credits.
+            </p>
+            {freePlanWarning && (
+              <p className="mt-2 text-xs font-semibold text-orange-700">
+                Free plan recommended max is 50 agents. Upgrade to run larger swarms.
+              </p>
+            )}
             {insufficientCredits && (
               <p className="mt-2 text-xs font-medium text-red-600">
-                This swarm costs {agentCount.toLocaleString()} credits — you have{' '}
+                This swarm costs {estimatedCost.toLocaleString()} credits — you have{' '}
                 {credits.toLocaleString()}.
               </p>
             )}
