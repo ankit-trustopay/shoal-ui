@@ -19,7 +19,9 @@ const USAGE_ERROR_FALLBACK = 'Failed to load usage history. Please refresh.';
 
 export function Credits() {
   const {
-    credits,
+    totalCredits,
+    dailyCredits,
+    vaultCredits,
     plan,
     planId,
     loading: accountLoading,
@@ -117,12 +119,36 @@ export function Credits() {
 
       <div className="mb-10 md:mb-12">
         <CreditsBalanceHero
-          balance={credits}
+          balance={totalCredits}
           planLabel={formatPlanLabel(plan)}
           loading={accountLoading}
           error={walletErrorMessage}
           onBuyExtra={handleBuyCredits}
         />
+        {!walletErrorMessage && !accountLoading && (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <BentoCard className="rounded-2xl border border-gray-200/80 bg-white p-5">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2">
+                Daily Free
+              </p>
+              <p className="text-2xl font-bold text-black tracking-tighter tabular-nums">
+                {dailyCredits.toLocaleString()}
+                <span className="text-sm font-medium text-gray-500 ml-1">cr</span>
+              </p>
+              <p className="mt-1 text-xs text-gray-500">Resets at midnight</p>
+            </BentoCard>
+            <BentoCard className="rounded-2xl border border-gray-200/80 bg-white p-5">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2">
+                Vault
+              </p>
+              <p className="text-2xl font-bold text-black tracking-tighter tabular-nums">
+                {vaultCredits.toLocaleString()}
+                <span className="text-sm font-medium text-gray-500 ml-1">cr</span>
+              </p>
+              <p className="mt-1 text-xs text-gray-500">Never expires</p>
+            </BentoCard>
+          </div>
+        )}
       </div>
 
       <HowCreditsWorkSection />

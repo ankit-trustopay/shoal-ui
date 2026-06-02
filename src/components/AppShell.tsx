@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -29,15 +29,9 @@ const navItems = [
 ];
 
 function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
-  const { loading, error: accountError } = useUserAccount();
+  const { loading, error: accountError, dailyCredits, vaultCredits, totalCredits } =
+    useUserAccount();
   const { toastMessage, showToast } = useConsoleToast();
-
-  // Dummy data for redesigned header credits display (replace with API fields later).
-  const { dailyCredits, vaultCredits, totalCredits } = useMemo(() => {
-    const daily = 120;
-    const vault = 35;
-    return { dailyCredits: daily, vaultCredits: vault, totalCredits: daily + vault };
-  }, []);
 
   return (
     <header className="glass-sticky flex shrink-0 items-center justify-between gap-3 border-b border-gray-200/60 bg-[#FAFAFA]/95 px-4 sm:px-8 py-3 backdrop-blur-md">

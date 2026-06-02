@@ -149,7 +149,8 @@ export interface SwarmRecord {
 }
 
 export interface UserAccount {
-  credits: number;
+  dailyCredits: number;
+  vaultCredits: number;
   plan: string;
 }
 
@@ -166,11 +167,19 @@ export async function getUserAccount(): Promise<UserAccount> {
 
   const body = data as UserAccount & ApiErrorBody;
 
-  if (typeof body.credits !== 'number' || typeof body.plan !== 'string') {
+  if (
+    typeof body.dailyCredits !== 'number' ||
+    typeof body.vaultCredits !== 'number' ||
+    typeof body.plan !== 'string'
+  ) {
     throw new ApiRequestError('Invalid account response', res.status);
   }
 
-  return { credits: body.credits, plan: body.plan };
+  return {
+    dailyCredits: body.dailyCredits,
+    vaultCredits: body.vaultCredits,
+    plan: body.plan,
+  };
 }
 
 export async function createSwarm(

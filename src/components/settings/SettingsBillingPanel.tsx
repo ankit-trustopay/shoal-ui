@@ -13,7 +13,8 @@ interface SettingsBillingPanelProps {
 }
 
 export function SettingsBillingPanel({ onChangePlan }: SettingsBillingPanelProps) {
-  const { credits, plan, planId, loading } = useUserAccount();
+  const { totalCredits, dailyCredits, vaultCredits, plan, planId, loading } =
+    useUserAccount();
   const currentTier = saasPlans.find((tier) => tier.id === planId) ?? saasPlans[0];
 
   return (
@@ -44,7 +45,7 @@ export function SettingsBillingPanel({ onChangePlan }: SettingsBillingPanelProps
           <h2 className="font-bold text-black tracking-tight">Available credits</h2>
           <span className="font-mono text-sm text-gray-600 tabular-nums">
             <span className="text-black font-semibold">
-              {loading ? '…' : credits.toLocaleString()}
+              {loading ? '…' : totalCredits.toLocaleString()}
             </span>{' '}
             credits
           </span>
@@ -53,6 +54,26 @@ export function SettingsBillingPanel({ onChangePlan }: SettingsBillingPanelProps
           Your ledger balance is synced from the database. Each virtual human in a
           swarm costs exactly 1 credit at ignition.
         </p>
+        {!loading && (
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="rounded-xl border border-gray-200/70 bg-gray-50/50 px-4 py-3">
+              <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                Daily free
+              </div>
+              <div className="mt-1 font-mono text-sm font-semibold tabular-nums text-gray-900">
+                {dailyCredits.toLocaleString()} credits
+              </div>
+            </div>
+            <div className="rounded-xl border border-gray-200/70 bg-gray-50/50 px-4 py-3">
+              <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                Vault
+              </div>
+              <div className="mt-1 font-mono text-sm font-semibold tabular-nums text-gray-900">
+                {vaultCredits.toLocaleString()} credits
+              </div>
+            </div>
+          </div>
+        )}
         <Link
           to="/app/credits"
           className="inline-block mt-5 bg-axiom text-white rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-orange-600 transition-colors"

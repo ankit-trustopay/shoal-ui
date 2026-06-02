@@ -13,6 +13,10 @@ import { normalizePlanId } from '../lib/planLabels';
 
 interface UserAccountContextValue {
   account: UserAccount | null;
+  totalCredits: number;
+  dailyCredits: number;
+  vaultCredits: number;
+  /** @deprecated Prefer totalCredits/dailyCredits/vaultCredits */
   credits: number;
   plan: string;
   planId: SaasPlanId;
@@ -73,7 +77,10 @@ export function UserAccountProvider({ children }: { children: React.ReactNode })
   const value = useMemo<UserAccountContextValue>(
     () => ({
       account,
-      credits: account?.credits ?? 0,
+      dailyCredits: account?.dailyCredits ?? 0,
+      vaultCredits: account?.vaultCredits ?? 0,
+      totalCredits: (account?.dailyCredits ?? 0) + (account?.vaultCredits ?? 0),
+      credits: (account?.dailyCredits ?? 0) + (account?.vaultCredits ?? 0),
       plan: account?.plan ?? 'FREE',
       planId: normalizePlanId(account?.plan ?? 'FREE'),
       loading,
