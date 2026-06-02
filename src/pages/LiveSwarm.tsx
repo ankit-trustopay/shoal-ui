@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '../components/ui/PageContainer';
 import { EnterpriseLiveConsole } from '../components/swarm/live-console/EnterpriseLiveConsole';
 import { SwarmDeliberationFailed } from '../components/swarm/live-console/SwarmDeliberationFailed';
@@ -21,7 +21,8 @@ function SwarmError({ message }: { message: string }) {
 
 export function LiveSwarm() {
   const [searchParams] = useSearchParams();
-  const swarmId = searchParams.get('swarmId');
+  const params = useParams();
+  const swarmId = searchParams.get('swarmId') ?? params.debateId ?? null;
 
   const { swarm, initialLoading, isPolling, isFailed, fetchError } =
     useSwarmPolling(swarmId);

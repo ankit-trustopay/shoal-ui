@@ -10,6 +10,10 @@ import { Contact } from './pages/Contact';
 import { Product } from './pages/Product';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
+import { LiveSwarm } from './pages/LiveSwarm';
+import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import { AppShell } from './components/AppShell';
+import { useLocation } from 'react-router-dom';
 
 function Placeholder() {
   return (
@@ -35,6 +39,13 @@ export function App() {
         <Route path="/signup/*" element={<Navigate to="/sign-up" replace />} />
 
         <Route path="/app/*" element={<ProtectedAppRoutes />} />
+
+        <Route
+          path="/debate/:debateId"
+          element={
+            <DebateRoute />
+          }
+        />
 
         <Route
           path="/"
@@ -94,5 +105,21 @@ export function App() {
         />
       </Routes>
     </BrowserRouter>
+  );
+}
+
+function DebateRoute() {
+  const location = useLocation();
+  return (
+    <>
+      <SignedIn>
+        <AppShell>
+          <LiveSwarm />
+        </AppShell>
+      </SignedIn>
+      <SignedOut>
+        <Navigate to="/sign-in" replace state={{ from: location.pathname }} />
+      </SignedOut>
+    </>
   );
 }

@@ -97,6 +97,21 @@ export interface CreateSwarmResponse {
   swarmId: string;
 }
 
+export interface CreateDebatePayload {
+  query: string;
+  agentCount: number;
+  modelTier: 'lite' | 'plus';
+  advancedVariables: {
+    targetAudience?: string;
+    pricePoint?: string;
+    marketingBudget?: string;
+  };
+}
+
+export interface CreateDebateResponse {
+  debateId: string;
+}
+
 export type SwarmStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
 export interface SwarmMessageRecord {
@@ -219,6 +234,32 @@ export async function createSwarm(
   }
 
   return { swarmId: body.swarmId };
+}
+
+export async function createDebate(
+  payload: CreateDebatePayload,
+): Promise<CreateDebateResponse> {
+  const res = await apiFetch('/api/debates', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+  const data: unknown = await res.json();
+
+  if (!res.ok) {
+    throw new ApiRequestError(
+      parseErrorMessage(data, 'Failed to start debate'),
+      res.status,
+    );
+  }
+
+  const body = data as CreateDebateResponse & ApiErrorBody;
+
+  if (typeof body.debateId !== 'string' || !body.debateId.trim()) {
+    throw new ApiRequestError('Server did not return a debateId', res.status);
+  }
+
+  return { debateId: body.debateId.trim() };
 }
 
 export async function listSwarms(): Promise<SwarmHistoryListItem[]> {

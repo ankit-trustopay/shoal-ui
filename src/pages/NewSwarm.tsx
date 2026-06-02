@@ -10,7 +10,7 @@ import {
   XIcon,
 } from 'lucide-react';
 import { SwarmIgnitionProgress } from '../components/swarm/live-console/SwarmIgnitionProgress';
-import { createSwarm } from '../lib/api';
+import { createDebate } from '../lib/api';
 import { useUserAccount } from '../hooks/useUserAccount';
 import {
   saasPlans,
@@ -151,20 +151,25 @@ export function NewSwarm() {
   }, []);
 
   const handleIgniteSwarm = useCallback(async () => {
-    const premise = prompt.trim();
-    if (!premise || isIgniting || estimatedCost > credits) return;
+    const query = prompt.trim();
+    if (!query || isIgniting || estimatedCost > credits) return;
 
     setIsIgniting(true);
     setIgniteError(null);
 
     try {
-      const { swarmId } = await createSwarm({
-        premise,
+      const { debateId } = await createDebate({
+        query,
         agentCount,
-        model: modelTier,
+        modelTier,
+        advancedVariables: {
+          targetAudience: targetAudience.trim() || undefined,
+          pricePoint: pricePoint.trim() || undefined,
+          marketingBudget: marketingBudget.trim() || undefined,
+        },
       });
       await refresh();
-      navigate(`/app/live?swarmId=${encodeURIComponent(swarmId)}`);
+      navigate(`/debate/${encodeURIComponent(debateId)}`);
     } catch (err) {
       setIgniteError(
         err instanceof Error ? err.message : 'Failed to ignite swarm'
@@ -172,7 +177,19 @@ export function NewSwarm() {
     } finally {
       setIsIgniting(false);
     }
-  }, [prompt, agentCount, modelTier, credits, estimatedCost, isIgniting, navigate, refresh]);
+  }, [
+    prompt,
+    agentCount,
+    modelTier,
+    targetAudience,
+    pricePoint,
+    marketingBudget,
+    credits,
+    estimatedCost,
+    isIgniting,
+    navigate,
+    refresh,
+  ]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
