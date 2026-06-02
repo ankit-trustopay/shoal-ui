@@ -101,6 +101,7 @@ export interface CreateDebatePayload {
   query: string;
   agentCount: number;
   modelTier: 'lite' | 'plus';
+  modelMix: number;
   advancedVariables: {
     targetAudience?: string;
     pricePoint?: string;

@@ -49,7 +49,7 @@ export function SettingsPlansPanel() {
         Upgrade when you need more virtual humans per task or monthly credits.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mx-auto items-start">
+      <div className="flex flex-col lg:flex-row justify-center items-stretch gap-6 w-full max-w-6xl mx-auto mt-8">
         {settingsPlans.map((tier) => (
           <PlanCard key={tier.id} plan={tier} currentPlanId={planId} />
         ))}
@@ -78,7 +78,7 @@ function PlanCard({
   return (
     <BentoCard
       className={cn(
-        'relative flex w-full flex-col p-5',
+        'flex-1 w-full min-w-[300px] max-w-[350px] relative flex flex-col p-5',
         isCurrent && '!border-2 !border-axiom',
         !isCurrent && plan.highlight === 'popular' && 'border-orange-200',
       )}
@@ -102,7 +102,9 @@ function PlanCard({
       </div>
       <p className="text-xs text-gray-600 mb-4 leading-snug">{plan.tagline}</p>
       <ul className="space-y-2 mb-5 flex-1">
-        {plan.features.map((feature) => (
+        {plan.features
+          .filter((feature) => !/api\s+access/i.test(feature))
+          .map((feature) => (
           <li key={feature} className="flex items-start gap-2 text-sm text-gray-700">
             <CheckIcon size={14} className="text-axiom shrink-0 mt-0.5" />
             <span>{feature}</span>

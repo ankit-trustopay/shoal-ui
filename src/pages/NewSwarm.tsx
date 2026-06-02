@@ -151,6 +151,7 @@ export function NewSwarm() {
         query,
         agentCount,
         modelTier,
+        modelMix,
         advancedVariables: {},
       });
       await refresh();
