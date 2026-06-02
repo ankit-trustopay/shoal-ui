@@ -8,6 +8,11 @@ import {
   hasMeaningfulVerdict,
   parseDebateResult,
 } from '../lib/debateResult';
+import {
+  isDebateCompleted,
+  isDebateFailed,
+  shouldShowLiveSimulation,
+} from '../lib/debateStatus';
 import { useDebatePolling } from '../hooks/useDebatePolling';
 
 function DebateLoadError({ message }: { message: string }) {
@@ -80,7 +85,14 @@ export function Debate() {
     result?.confidence ??
     (typeof debate?.confidence === 'number' ? debate.confidence : 0);
 
-  const status = debate?.status ?? null;
+  const completed = isDebateCompleted(debate?.status, debate?.resultData);
+  const failed = isDebateFailed(debate?.status);
+  const showLiveTerminal = shouldShowLiveSimulation(
+    debate?.status,
+    debate?.resultData,
+    loading,
+    Boolean(debate),
+  );
 
   if (!debateId) {
     return (
@@ -98,7 +110,7 @@ export function Debate() {
     );
   }
 
-  if (status === 'PENDING' || status === 'RUNNING' || (loading && !debate)) {
+  if (showLiveTerminal) {
     return (
       <PageContainer width="full" className="py-8">
         <div className="mx-auto w-full max-w-6xl">
@@ -111,7 +123,7 @@ export function Debate() {
     );
   }
 
-  if (status === 'FAILED') {
+  if (failed) {
     return (
       <PageContainer width="full" className="py-8">
         <div className="mx-auto w-full max-w-6xl">
@@ -121,17 +133,28 @@ export function Debate() {
     );
   }
 
+  if (completed) {
+    return (
+      <PageContainer width="full" className="py-8">
+        <DebateResultsDashboard
+          sessionCode={sessionCode}
+          premise={debate?.premise ?? 'Untitled debate'}
+          verdict={verdict}
+          confidence={confidence}
+          agents={agents}
+          createdAt={debate?.createdAt ?? null}
+          showErrorState={!hasMeaningfulVerdict(verdict)}
+        />
+      </PageContainer>
+    );
+  }
+
+  // Unknown / initial load without terminal criteria — brief loading shell (not the live terminal).
   return (
     <PageContainer width="full" className="py-8">
-      <DebateResultsDashboard
-        sessionCode={sessionCode}
-        premise={debate?.premise ?? 'Untitled debate'}
-        verdict={verdict}
-        confidence={confidence}
-        agents={agents}
-        createdAt={debate?.createdAt ?? null}
-        showErrorState={!hasMeaningfulVerdict(verdict)}
-      />
+      <div className="mx-auto w-full max-w-6xl rounded-2xl border border-gray-200 bg-gray-50 px-6 py-16 text-center">
+        <p className="text-sm font-medium text-gray-600">Loading debate…</p>
+      </div>
     </PageContainer>
   );
 }
