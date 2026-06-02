@@ -1,5 +1,5 @@
 import React from 'react';
-import { SwarmIgnitionProgress } from './SwarmIgnitionProgress';
+import { LiveSimulationDashboard } from './LiveSimulationDashboard';
 
 interface SwarmDeliberatingBannerProps {
   sessionCode?: string;
@@ -12,8 +12,7 @@ export function SwarmDeliberatingBanner({
   premise,
 }: SwarmDeliberatingBannerProps) {
   return (
-    <SwarmIgnitionProgress
-      variant="hero"
+    <LiveSimulationDashboard
       sessionCode={sessionCode}
       premise={premise}
     />
