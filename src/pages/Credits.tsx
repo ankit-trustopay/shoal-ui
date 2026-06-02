@@ -11,7 +11,7 @@ import { HowCreditsWorkSection } from '../components/credits/HowCreditsWorkSecti
 import { BentoCard } from '../components/ui/BentoCard';
 import { useUserAccount } from '../hooks/useUserAccount';
 import { formatPlanLabel } from '../lib/planLabels';
-import { listSwarms, type SwarmHistoryListItem } from '../lib/api';
+import { listDebates, type DebateUsageListItem } from '../lib/api';
 import type { BillingTier } from '../data/creditsBilling';
 
 const WALLET_ERROR_FALLBACK = 'Failed to load wallet. Please refresh.';
@@ -27,7 +27,7 @@ export function Credits() {
     loading: accountLoading,
     error: accountError,
   } = useUserAccount();
-  const [swarms, setSwarms] = useState<SwarmHistoryListItem[]>([]);
+  const [swarms, setSwarms] = useState<DebateUsageListItem[]>([]);
   const [usageLoading, setUsageLoading] = useState(true);
   const [usageError, setUsageError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; key: number } | null>(null);
@@ -56,7 +56,7 @@ export function Credits() {
       setUsageError(null);
 
       try {
-        const data = await listSwarms();
+        const data = await listDebates();
         if (!cancelled) {
           setSwarms(data);
         }

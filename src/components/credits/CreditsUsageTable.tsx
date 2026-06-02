@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ReceiptIcon, SparklesIcon } from 'lucide-react';
-import type { SwarmHistoryListItem } from '../../lib/api';
+import type { DebateUsageListItem } from '../../lib/api';
 import { formatCostCredits } from '../swarm/live-console/swarmStats';
 import { MonoLabel } from '../ui/MonoLabel';
 import { BentoCard } from '../ui/BentoCard';
@@ -19,20 +19,13 @@ function formatUsageDate(iso: string): string {
   });
 }
 
-function formatCostDeduction(cost: number | null | undefined): string {
+function formatCreditsConsumed(cost: number | null | undefined): string {
   if (cost == null || cost <= 0) return '—';
-  return `-${formatCostCredits(cost)} Credits`;
-}
-
-function resolveAgentCount(swarm: SwarmHistoryListItem): number {
-  if (typeof swarm.agentCount === 'number' && swarm.agentCount > 0) {
-    return swarm.agentCount;
-  }
-  return 0;
+  return `${formatCostCredits(cost)} Credits`;
 }
 
 interface CreditsUsageTableProps {
-  swarms: SwarmHistoryListItem[];
+  swarms: DebateUsageListItem[];
   loading?: boolean;
 }
 
@@ -55,21 +48,21 @@ export function CreditsUsageTable({ swarms, loading }: CreditsUsageTableProps) {
                 Date
               </th>
               <th className="px-5 py-4 font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-                Premise
+                Query
               </th>
-              <th className="px-5 py-4 font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500 w-[160px] text-right">
-                Agents deployed
+              <th className="px-5 py-4 font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500 w-[220px]">
+                Agents & model
               </th>
               <th className="px-5 py-4 font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500 w-[140px] text-right">
-                Cost
+                Credits consumed
               </th>
             </tr>
           </thead>
           <tbody>
             {swarms.map((swarm) => {
-              const agents = resolveAgentCount(swarm);
-              const costLabel = formatCostDeduction(swarm.cost);
-              const hasCost = swarm.cost != null && swarm.cost > 0;
+              const costLabel = formatCreditsConsumed(swarm.creditsConsumed);
+              const hasCost = swarm.creditsConsumed > 0;
+              const modelLabel = swarm.model ? swarm.model : '—';
 
               return (
                 <tr
@@ -87,8 +80,13 @@ export function CreditsUsageTable({ swarms, loading }: CreditsUsageTableProps) {
                       {swarm.premise}
                     </Link>
                   </td>
-                  <td className="px-5 py-4 text-sm font-semibold text-gray-900 tabular-nums text-right align-top whitespace-nowrap">
-                    {agents > 0 ? agents.toLocaleString() : '—'}
+                  <td className="px-5 py-4 align-top">
+                    <div className="flex flex-col gap-1">
+                      <div className="text-sm font-semibold text-gray-900 tabular-nums whitespace-nowrap">
+                        {swarm.agentCount.toLocaleString()} agents
+                      </div>
+                      <div className="text-xs text-gray-500">{modelLabel}</div>
+                    </div>
                   </td>
                   <td
                     className={cn(

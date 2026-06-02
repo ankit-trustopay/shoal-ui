@@ -128,6 +128,15 @@ export interface SwarmHistoryListItem {
   runtime: number | null;
 }
 
+export interface DebateUsageListItem {
+  id: string;
+  createdAt: string;
+  premise: string;
+  agentCount: number;
+  model: string | null;
+  creditsConsumed: number;
+}
+
 export interface SwarmRecord {
   id: string;
   userId: string;
@@ -228,6 +237,24 @@ export async function listSwarms(): Promise<SwarmHistoryListItem[]> {
   }
 
   return data as SwarmHistoryListItem[];
+}
+
+export async function listDebates(): Promise<DebateUsageListItem[]> {
+  const res = await apiFetch('/api/debates');
+  const data: unknown = await res.json();
+
+  if (!res.ok) {
+    throw new ApiRequestError(
+      parseErrorMessage(data, 'Failed to load usage history'),
+      res.status,
+    );
+  }
+
+  if (!Array.isArray(data)) {
+    throw new ApiRequestError('Invalid usage history response', res.status);
+  }
+
+  return data as DebateUsageListItem[];
 }
 
 export async function getSwarm(swarmId: string): Promise<SwarmRecord> {
