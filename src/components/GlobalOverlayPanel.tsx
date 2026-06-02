@@ -40,7 +40,7 @@ export function GlobalOverlayPanel({
       const rect = el.getBoundingClientRect();
       const style: React.CSSProperties = {
         position: 'fixed',
-        zIndex: 50,
+        zIndex: 9999,
         minWidth: rect.width,
       };
 

@@ -36,6 +36,6 @@ body {
    * Always pair portaled/fixed panels with this class — never rely on semi-transparent parents.
    */
   .global-overlay {
-    @apply bg-white dark:bg-gray-900 z-50 shadow-xl border border-gray-100;
+    @apply z-50 border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900;
   }
 }
