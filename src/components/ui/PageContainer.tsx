@@ -22,8 +22,8 @@ export function PageContainer({
   return (
     <div
       className={cn(
-        'mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-12',
-        widthClass[width],
+        'mx-auto w-full max-w-5xl overflow-x-hidden px-4 sm:px-6 md:px-8 lg:px-12',
+        width !== 'default' ? widthClass[width] : '',
         className,
       )}
     >

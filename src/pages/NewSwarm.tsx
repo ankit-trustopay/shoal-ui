@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState, useRef, type ComponentType } f
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowUpIcon,
+  CheckIcon,
   ChevronDownIcon,
   LockIcon,
   PaperclipIcon,
@@ -197,7 +198,7 @@ export function NewSwarm() {
   };
   const hasAttachments = attachedFiles.length > 0 || attachedLinks.length > 0;
   return (
-    <div className="px-4 sm:px-6 md:px-8 lg:px-12 pb-12 relative">
+    <div className="w-full overflow-x-hidden px-4 sm:px-6 md:px-8 lg:px-12 pb-12 relative">
       {isIgniting && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] px-4"
@@ -214,7 +215,7 @@ export function NewSwarm() {
       {/* Subtle radial glow */}
       <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-orange-500/5 blur-3xl -z-0" />
 
-      <div className="max-w-4xl mx-auto relative z-10">
+      <div className="w-full max-w-5xl mx-auto overflow-x-hidden relative z-10">
         {/* Heading */}
         <div className="text-center pt-8 md:pt-16 mb-10">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-sans font-bold text-black tracking-tighter leading-[1.05] mb-5">
@@ -439,8 +440,8 @@ export function NewSwarm() {
                   <ChevronDownIcon size={13} className="text-gray-400" />
                 </button>
 
-                {planOpen &&
-                <div className="global-overlay absolute bottom-full right-0 mb-2 w-80 overflow-hidden rounded-xl isolate">
+                {planOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 overflow-hidden rounded-md border border-gray-200 bg-white shadow-xl z-50">
                     <div className="px-4 py-2.5 border-b border-gray-100">
                       <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
                         Swarm Tier
@@ -517,7 +518,7 @@ export function NewSwarm() {
                       </a>
                     </div>
                   </div>
-                }
+                )}
               </div>
 
               <button

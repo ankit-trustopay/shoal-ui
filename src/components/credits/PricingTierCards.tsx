@@ -56,7 +56,7 @@ export function PricingTierCards({
         </p>
       </div>
 
-      <div className="flex flex-col items-stretch gap-6 md:flex-row md:flex-wrap md:justify-center">
+      <div className="flex justify-center flex-wrap gap-8">
         {billingTiers.map((tier) => {
           const Icon = tier.icon;
           const isCurrent = tier.id === currentPlanId;

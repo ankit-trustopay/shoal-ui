@@ -68,7 +68,10 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
             <ZapIcon size={14} className="text-orange-500 shrink-0" aria-hidden />
             <span className="tabular-nums">
               {loading ? (
-                <span className="inline-block h-4 w-10 rounded bg-gray-100 animate-pulse align-middle" />
+                <span
+                  className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-orange-500 align-middle"
+                  aria-label="Loading credits"
+                />
               ) : accountError ? (
                 '0'
               ) : (
@@ -80,8 +83,8 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
             </span>
 
             {/* Premium hover popover */}
-            <div className="pointer-events-none absolute right-0 top-full z-30 mt-2 hidden w-[18.5rem] translate-y-1 opacity-0 transition-all duration-150 group-hover:block group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:block">
-              <div className="rounded-2xl border border-gray-200/70 bg-white/90 p-3 shadow-[0_12px_40px_rgba(0,0,0,0.10)] backdrop-blur">
+            <div className="pointer-events-none absolute right-0 top-full mt-2 hidden w-64 translate-y-1 opacity-0 transition-all duration-150 group-hover:block group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:block z-50">
+              <div className="border rounded-md bg-white shadow-xl">
                 <div className="space-y-2">
                   <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Wallet

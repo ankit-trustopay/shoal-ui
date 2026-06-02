@@ -86,7 +86,7 @@ export function Credits() {
   };
 
   return (
-    <PageContainer width="wide" className="pb-16 pt-6 md:pt-8 relative">
+    <PageContainer className="pb-16 pt-6 md:pt-8 relative">
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -117,7 +117,8 @@ export function Credits() {
         </BentoCard>
       )}
 
-      <div className="mb-10 md:mb-12">
+      <div className="flex flex-col items-center">
+        <div className="w-full mb-10 md:mb-12">
         <CreditsBalanceHero
           balance={totalCredits}
           planLabel={formatPlanLabel(plan)}
@@ -149,19 +150,19 @@ export function Credits() {
             </BentoCard>
           </div>
         )}
-      </div>
+        </div>
 
-      <HowCreditsWorkSection />
+        <div className="w-full">
+          <PricingTierCards currentPlanId={planId} onUpgrade={handleUpgrade} />
+        </div>
 
-      <div className="mb-10 md:mb-14">
-        <PricingTierCards currentPlanId={planId} onUpgrade={handleUpgrade} />
-      </div>
+        <HowCreditsWorkSection />
 
-      <div className="mb-10 md:mb-14">
-        <BuyExtraCreditsPanel onBuyCredits={handleBuyCredits} />
-      </div>
+        <div className="w-full mb-10 md:mb-14">
+          <BuyExtraCreditsPanel onBuyCredits={handleBuyCredits} />
+        </div>
 
-      <section className="mb-4" aria-labelledby="recent-usage-heading">
+      <section className="w-full mb-4" aria-labelledby="recent-usage-heading">
         <h2
           id="recent-usage-heading"
           className="text-2xl font-bold text-black tracking-tight mb-1"
@@ -180,6 +181,7 @@ export function Credits() {
 
         <CreditsUsageTable swarms={swarms} loading={usageLoading} />
       </section>
+      </div>
     </PageContainer>
   );
 }

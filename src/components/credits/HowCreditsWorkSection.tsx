@@ -20,11 +20,11 @@ export function HowCreditsWorkSection() {
   return (
     <section
       aria-labelledby="how-credits-work-heading"
-      className="mb-10 md:mb-14 rounded-2xl border-2 border-orange-500/30 bg-gradient-to-br from-orange-50 via-white to-orange-50/40 p-6 md:p-8 shadow-bento"
+      className="w-full mb-10 md:mb-14 rounded-2xl border border-gray-200 bg-white p-6 md:p-8 shadow-bento"
     >
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="max-w-xl">
-          <MonoLabel className="mb-2 flex items-center gap-2 text-orange-600">
+      <div className="flex flex-col items-center text-center gap-6">
+        <div className="max-w-2xl">
+          <MonoLabel className="mb-2 inline-flex items-center gap-2 text-orange-600">
             <CalculatorIcon size={12} aria-hidden />
             Transparency
           </MonoLabel>
@@ -34,46 +34,44 @@ export function HowCreditsWorkSection() {
           >
             How credits work
           </h2>
-          <div className="space-y-3 text-sm md:text-base text-gray-700 leading-relaxed">
-            <div className="flex items-start gap-3">
-              <span className="mt-1 h-2 w-2 rounded-full bg-orange-500/70" />
-              <p>
+          <div className="mt-5 space-y-3 text-sm md:text-base text-gray-700 leading-relaxed text-left">
+            <p className="flex items-start gap-2">
+              <span className="shrink-0">🧠</span>
+              <span>
                 <span className="font-semibold text-gray-900">
                   Lite Models (1 Credit/Agent):
                 </span>{' '}
                 Fast, efficient models for standard reasoning.{' '}
-                <InfoTooltip label="Lite runs prioritize speed and cost efficiency for everyday decisions." />
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-1 h-2 w-2 rounded-full bg-gray-900/70" />
-              <p>
+                <InfoTooltip label="Uses models like Llama-3 or DeepSeek for rapid data processing." />
+              </span>
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="shrink-0">🧠</span>
+              <span>
                 <span className="font-semibold text-gray-900">
                   Plus Models (5 Credits/Agent):
                 </span>{' '}
                 Advanced models for deep, complex reasoning.{' '}
-                <InfoTooltip label="Plus runs use more capable models for harder prompts and nuanced tradeoffs." />
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-1 h-2 w-2 rounded-full bg-orange-500/50" />
-              <p>
+                <InfoTooltip label="Uses elite models like GPT-4o or Claude 3.5 for high-stakes synthesis." />
+              </span>
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="shrink-0">🎛️</span>
+              <span>
                 <span className="font-semibold text-gray-900">What-If Tweaks:</span>{' '}
                 Your first 3 tweaks on any debate are 100% FREE. After that, it's a
                 flat 10 Credits per tweak.
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-1 h-2 w-2 rounded-full bg-orange-500/50" />
-              <p>
-                <span className="font-semibold text-gray-900">Top-Ups:</span> $5
-                gets you 1,000 Credits instantly.
-              </p>
-            </div>
+              </span>
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="shrink-0">⚡</span>
+              <span>
+                <span className="font-semibold text-gray-900">Top-Ups:</span> $5 gets
+                you 1,000 Credits instantly.
+              </span>
+            </p>
           </div>
         </div>
-
-        <div className="hidden lg:block h-14 w-14 shrink-0" aria-hidden />
       </div>
     </section>
   );
