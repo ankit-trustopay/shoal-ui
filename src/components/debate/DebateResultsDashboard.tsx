@@ -1,6 +1,8 @@
 import React from 'react';
-import { AlertTriangle, Quote, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, Quote, RefreshCw, Users } from 'lucide-react';
 import type { DebateAgentResult } from '../../lib/debateResult';
+import { AI_MODEL_ERROR_VERDICT } from '../../lib/debateResult';
 import { MonoLabel } from '../ui/MonoLabel';
 
 export interface DebateResultsDashboardProps {
@@ -11,6 +13,7 @@ export interface DebateResultsDashboardProps {
   agents: DebateAgentResult[];
   createdAt?: string | null;
   showErrorState?: boolean;
+  showModelError?: boolean;
 }
 
 function formatDate(iso: string | null | undefined): string | null {
@@ -64,6 +67,32 @@ function ConfidenceRing({ value }: { value: number }) {
   );
 }
 
+function ModelErrorState() {
+  return (
+    <div className="rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 via-white to-orange-50 p-8 sm:p-10">
+      <div className="flex flex-col items-center text-center max-w-lg mx-auto">
+        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 text-red-700">
+          <AlertTriangle size={28} aria-hidden />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          The AI model could not finish this debate
+        </h2>
+        <p className="text-sm text-gray-600 leading-relaxed mb-6">
+          {AI_MODEL_ERROR_VERDICT} Try again with a shorter query, switch your
+          model mix, or retry in a few minutes.
+        </p>
+        <Link
+          to="/app/new"
+          className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white hover:bg-black transition-colors"
+        >
+          <RefreshCw size={16} aria-hidden />
+          Start a new debate
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function EmptyVerdictState() {
   return (
     <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-8 sm:p-10">
@@ -91,11 +120,26 @@ export function DebateResultsDashboard({
   agents,
   createdAt,
   showErrorState = false,
+  showModelError = false,
 }: DebateResultsDashboardProps) {
   const sessionDate = formatDate(createdAt);
   const statusLine = ['CONSENSUS REACHED', sessionCode, sessionDate]
     .filter(Boolean)
     .join(' • ');
+
+  if (showModelError) {
+    return (
+      <div className="mx-auto w-full max-w-6xl space-y-8">
+        <header>
+          <MonoLabel className="text-red-500 mb-3 block">DEBATE COMPLETE</MonoLabel>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight leading-tight">
+            {premise}
+          </h1>
+        </header>
+        <ModelErrorState />
+      </div>
+    );
+  }
 
   if (showErrorState || !verdict.trim()) {
     return (

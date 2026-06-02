@@ -1,25 +1,45 @@
 import type { SwarmStatus } from './api';
 
+export type DebateUiPhase =
+  | 'loading'
+  | 'in_progress'
+  | 'completed'
+  | 'failed';
+
 /**
- * Normalize API status (handles COMPLETED vs completed vs complete).
+ * Normalize API status (COMPLETED, completed, in_progress, RUNNING, etc.).
  */
 export function normalizeDebateStatus(status: unknown): SwarmStatus | null {
   if (typeof status !== 'string' || !status.trim()) {
     return null;
   }
 
-  const upper = status.trim().toUpperCase();
+  const lower = status.trim().toLowerCase();
+  const upper = lower.toUpperCase();
 
-  if (upper === 'COMPLETED' || upper === 'COMPLETE') {
+  if (
+    upper === 'COMPLETED' ||
+    upper === 'COMPLETE' ||
+    lower === 'completed'
+  ) {
     return 'COMPLETED';
   }
-  if (upper === 'RUNNING') {
+  if (
+    upper === 'RUNNING' ||
+    lower === 'in_progress' ||
+    lower === 'in-progress' ||
+    lower === 'deliberating'
+  ) {
     return 'RUNNING';
   }
-  if (upper === 'PENDING') {
+  if (upper === 'PENDING' || lower === 'pending') {
     return 'PENDING';
   }
-  if (upper === 'FAILED' || upper === 'FAILURE') {
+  if (
+    upper === 'FAILED' ||
+    upper === 'FAILURE' ||
+    lower === 'failed'
+  ) {
     return 'FAILED';
   }
 
@@ -53,9 +73,9 @@ export function isDebateFailed(status: unknown): boolean {
 }
 
 /**
- * Live terminal only while deliberation is in flight — never when completed/failed.
+ * True while deliberation is active — never true when completed/failed.
  */
-export function shouldShowLiveSimulation(
+export function isDebateInProgress(
   status: unknown,
   resultData: unknown,
   loading: boolean,
@@ -71,4 +91,32 @@ export function shouldShowLiveSimulation(
   }
 
   return loading && !hasDebateRecord;
+}
+
+export function resolveDebateUiPhase(
+  status: unknown,
+  resultData: unknown,
+  loading: boolean,
+  hasDebateRecord: boolean,
+): DebateUiPhase {
+  if (isDebateCompleted(status, resultData)) {
+    return 'completed';
+  }
+  if (isDebateFailed(status)) {
+    return 'failed';
+  }
+  if (isDebateInProgress(status, resultData, loading, hasDebateRecord)) {
+    return 'in_progress';
+  }
+  return 'loading';
+}
+
+/** @deprecated use isDebateInProgress */
+export function shouldShowLiveSimulation(
+  status: unknown,
+  resultData: unknown,
+  loading: boolean,
+  hasDebateRecord: boolean,
+): boolean {
+  return isDebateInProgress(status, resultData, loading, hasDebateRecord);
 }

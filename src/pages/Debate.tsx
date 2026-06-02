@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { PageContainer } from '../components/ui/PageContainer';
 import { DebateResultsDashboard } from '../components/debate/DebateResultsDashboard';
@@ -6,13 +6,10 @@ import { LiveSimulationDashboard } from '../components/swarm/live-console/LiveSi
 import { SwarmDeliberationFailed } from '../components/swarm/live-console/SwarmDeliberationFailed';
 import {
   hasMeaningfulVerdict,
+  isAiModelErrorVerdict,
   parseDebateResult,
 } from '../lib/debateResult';
-import {
-  isDebateCompleted,
-  isDebateFailed,
-  shouldShowLiveSimulation,
-} from '../lib/debateStatus';
+import { resolveDebateUiPhase } from '../lib/debateStatus';
 import { useDebatePolling } from '../hooks/useDebatePolling';
 
 function DebateLoadError({ message }: { message: string }) {
@@ -85,14 +82,23 @@ export function Debate() {
     result?.confidence ??
     (typeof debate?.confidence === 'number' ? debate.confidence : 0);
 
-  const completed = isDebateCompleted(debate?.status, debate?.resultData);
-  const failed = isDebateFailed(debate?.status);
-  const showLiveTerminal = shouldShowLiveSimulation(
+  const phase = resolveDebateUiPhase(
     debate?.status,
     debate?.resultData,
     loading,
     Boolean(debate),
   );
+
+  useEffect(() => {
+    console.log('[Debate] phase', {
+      debateId,
+      phase,
+      apiStatus: debate?.status,
+      loading,
+      verdictLen: verdict.length,
+      isAiError: isAiModelErrorVerdict(verdict),
+    });
+  }, [debateId, phase, debate?.status, loading, verdict]);
 
   if (!debateId) {
     return (
@@ -110,7 +116,7 @@ export function Debate() {
     );
   }
 
-  if (showLiveTerminal) {
+  if (phase === 'in_progress') {
     return (
       <PageContainer width="full" className="py-8">
         <div className="mx-auto w-full max-w-6xl">
@@ -123,7 +129,7 @@ export function Debate() {
     );
   }
 
-  if (failed) {
+  if (phase === 'failed') {
     return (
       <PageContainer width="full" className="py-8">
         <div className="mx-auto w-full max-w-6xl">
@@ -133,7 +139,7 @@ export function Debate() {
     );
   }
 
-  if (completed) {
+  if (phase === 'completed') {
     return (
       <PageContainer width="full" className="py-8">
         <DebateResultsDashboard
@@ -143,13 +149,15 @@ export function Debate() {
           confidence={confidence}
           agents={agents}
           createdAt={debate?.createdAt ?? null}
-          showErrorState={!hasMeaningfulVerdict(verdict)}
+          showErrorState={
+            !hasMeaningfulVerdict(verdict) || isAiModelErrorVerdict(verdict)
+          }
+          showModelError={isAiModelErrorVerdict(verdict)}
         />
       </PageContainer>
     );
   }
 
-  // Unknown / initial load without terminal criteria — brief loading shell (not the live terminal).
   return (
     <PageContainer width="full" className="py-8">
       <div className="mx-auto w-full max-w-6xl rounded-2xl border border-gray-200 bg-gray-50 px-6 py-16 text-center">

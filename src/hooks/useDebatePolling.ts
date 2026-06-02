@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getDebate, type SwarmRecord } from '../lib/api';
-import type { ApiRequestError } from '../lib/api';
+import { normalizeDebateStatus } from '../lib/debateStatus';
 
 type DebatePollingResult = {
   debate: SwarmRecord | null;
@@ -29,11 +29,20 @@ export function useDebatePolling(debateId: string | null): DebatePollingResult {
       try {
         const data = await getDebate(debateId);
         if (cancelled) return;
+
+        console.log('[useDebatePolling] fetched', {
+          debateId,
+          status: data.status,
+          normalized: normalizeDebateStatus(data.status),
+          confidence: data.confidence,
+          hasResultData: Boolean(data.resultData),
+        });
+
         setDebate(data);
         setError(null);
 
-        // Stop polling when terminal.
-        if (data.status === 'COMPLETED' || data.status === 'FAILED') {
+        const normalized = normalizeDebateStatus(data.status);
+        if (normalized === 'COMPLETED' || normalized === 'FAILED') {
           if (intervalId) window.clearInterval(intervalId);
           intervalId = null;
         }
@@ -41,6 +50,7 @@ export function useDebatePolling(debateId: string | null): DebatePollingResult {
         if (cancelled) return;
         const message =
           err instanceof Error ? err.message : 'Failed to load debate';
+        console.error('[useDebatePolling] error', { debateId, message });
         setError(message);
       } finally {
         if (!cancelled) setLoading(false);
@@ -66,4 +76,3 @@ export function useDebatePolling(debateId: string | null): DebatePollingResult {
     [debate, loading, error],
   );
 }
-

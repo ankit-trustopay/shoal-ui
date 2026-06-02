@@ -1,3 +1,6 @@
+export const AI_MODEL_ERROR_VERDICT =
+  'Error: The AI model failed to generate a response.';
+
 export type DebateAgentResult = {
   name: string;
   position: string;
@@ -81,8 +84,21 @@ export function parseDebateResult(
   };
 }
 
+export function isAiModelErrorVerdict(
+  verdict: string | null | undefined,
+): boolean {
+  if (!verdict?.trim()) return false;
+  const trimmed = verdict.trim();
+  return (
+    trimmed === AI_MODEL_ERROR_VERDICT ||
+    trimmed.startsWith('Error: The AI model failed to generate a response')
+  );
+}
+
 export function hasMeaningfulVerdict(verdict: string | null | undefined): boolean {
   if (!verdict?.trim()) return false;
+  if (isAiModelErrorVerdict(verdict)) return false;
+
   const lower = verdict.toLowerCase();
   return !(
     lower.includes('could not produce a verdict') ||
