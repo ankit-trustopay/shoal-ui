@@ -116,12 +116,11 @@ export function NewSwarm() {
   const activeModel =
     CREDIT_MODEL_OPTIONS.find((model) => model.id === modelTier) ??
     CREDIT_MODEL_OPTIONS[0];
-  const maxAgents = PLAN_AGENT_MAX[planId];
+  const maxAgents = PLAN_AGENT_MAX[userPlanId] ?? PLAN_AGENT_MAX.free;
   const estimatedCost = agentCount * activeModel.creditsPerAgent;
   const insufficientCredits = estimatedCost > credits;
   const canIgnite =
     prompt.trim().length > 0 && !isIgniting && !insufficientCredits;
-  const freePlanWarning = planId === 'free' && agentCount > 50;
 
   useEffect(() => {
     const query = searchParams.get('query');
@@ -132,10 +131,11 @@ export function NewSwarm() {
 
   useEffect(() => {
     setAgentCount((current) => {
-      const capped = Math.min(current, PLAN_AGENT_MAX[planId]);
-      return capped > 0 ? capped : PLAN_AGENT_DEFAULT[planId];
+      const capped = Math.min(current, maxAgents);
+      const fallback = PLAN_AGENT_DEFAULT[userPlanId] ?? PLAN_AGENT_DEFAULT.free;
+      return capped > 0 ? capped : fallback;
     });
-  }, [planId]);
+  }, [maxAgents, userPlanId]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -366,9 +366,7 @@ export function NewSwarm() {
               value={agentCount}
               onChange={(e) => setAgentCount(Number(e.target.value))}
               disabled={isIgniting}
-              className={`w-full h-1.5 cursor-pointer disabled:opacity-50 ${
-                freePlanWarning ? 'accent-orange-500' : 'accent-axiom'
-              }`}
+              className="w-full h-1.5 cursor-pointer disabled:opacity-50 accent-axiom"
             />
             <p className="mt-2 text-xs text-gray-500">
               Up to {maxAgents.toLocaleString()} agents on {activePlan.name} ·{' '}
@@ -382,11 +380,6 @@ export function NewSwarm() {
               </span>{' '}
               Credits.
             </p>
-            {freePlanWarning && (
-              <p className="mt-2 text-xs font-semibold text-orange-700">
-                Free plan recommended max is 50 agents. Upgrade to run larger swarms.
-              </p>
-            )}
             {insufficientCredits && (
               <p className="mt-2 text-xs font-medium text-red-600">
                 This swarm costs {estimatedCost.toLocaleString()} credits — you have{' '}
@@ -615,11 +608,16 @@ export function NewSwarm() {
                 type="button"
                 onClick={() => void handleIgniteSwarm()}
                 disabled={!canIgnite}
-                className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 bg-axiom text-white rounded-full px-4 py-2.5 text-sm font-semibold hover:bg-orange-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                className={`inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
+                  insufficientCredits
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-axiom text-white hover:bg-orange-600'
+                } ${!canIgnite ? 'opacity-60' : ''}`}
+              >
                 {isIgniting
                   ? 'Igniting...'
                   : insufficientCredits
-                    ? 'Insufficient Credits - Upgrade Plan'
+                    ? 'Insufficient Credits - Top Up'
                     : 'Ignite Swarm'}
                 {!isIgniting && !insufficientCredits && <ArrowUpIcon size={14} />}
               </button>
