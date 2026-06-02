@@ -237,87 +237,192 @@ function OverviewTab({
   const hasDissent = minorityDissent !== null;
   const hasEvidence = evidence.length > 0;
 
+  const [sandboxPrice, setSandboxPrice] = useState(49);
+  const [sandboxAudience, setSandboxAudience] = useState('SMB founders');
+  const [sandboxBudget, setSandboxBudget] = useState(5000);
+
   return (
-    <div className="space-y-10 pt-2">
-      <section>
-        <h3 className="text-lg font-bold text-gray-900 mb-5">Recommended Action</h3>
-        {hasActions ? (
-          <ol className="space-y-4">
-            {recommendedActions.map((action) => (
-              <li
-                key={`${action.step}-${action.title}`}
-                className="flex gap-4 rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
-                  {action.step}
-                </span>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">{action.title}</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">{action.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-10 px-6 text-center">
-            <p className="text-sm text-gray-600">
-              No strategic actions generated for this query.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {hasDissent && (
-        <section className="rounded-2xl border border-red-200/80 bg-red-50/50 p-6 sm:p-8">
-          <MonoLabel className="text-red-700 mb-3 block">Minority dissent</MonoLabel>
-          <p className="text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-line">
-            {minorityDissent}
-          </p>
-          {stats.votesAgainst > 0 && (
-            <p className="mt-3 font-mono text-xs text-red-700/80">
-              {stats.votesAgainst.toLocaleString()} agents · dissenting view
-            </p>
-          )}
-        </section>
-      )}
-
-      {hasEvidence && (
-        <section>
-          <div className="flex items-center justify-between gap-4 mb-5">
-            <h3 className="text-lg font-bold text-gray-900">Top Evidence</h3>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
-              From swarm research
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {evidence.map((item) => (
-              <a
-                key={item.id}
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm hover:border-orange-300 hover:shadow-md transition-all"
-              >
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-orange-500">
-                    {item.source}
-                  </span>
-                  <ExternalLink
-                    size={14}
-                    className="text-gray-400 group-hover:text-orange-500 shrink-0"
-                  />
-                </div>
-                <h4 className="font-semibold text-gray-900 text-sm mb-2 leading-snug">
-                  {item.title}
-                </h4>
-                <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                  {item.snippet}
+    <div className="pt-2">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+        <div className="space-y-10 min-w-0">
+          <section>
+            <h3 className="text-lg font-bold text-gray-900 mb-5">
+              Recommended Action
+            </h3>
+            {hasActions ? (
+              <ol className="space-y-4">
+                {recommendedActions.map((action) => (
+                  <li
+                    key={`${action.step}-${action.title}`}
+                    className="flex gap-4 rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
+                      {action.step}
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="font-semibold text-gray-900 mb-1">
+                        {action.title}
+                      </h4>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {action.body}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-10 px-6 text-center">
+                <p className="text-sm text-gray-600">
+                  No strategic actions generated for this query.
                 </p>
-              </a>
-            ))}
-          </div>
-        </section>
-      )}
+              </div>
+            )}
+          </section>
+
+          {hasDissent && (
+            <section className="rounded-2xl border border-red-200/80 bg-red-50/50 p-6 sm:p-8">
+              <MonoLabel className="text-red-700 mb-3 block">
+                Minority dissent
+              </MonoLabel>
+              <p className="text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-line">
+                {minorityDissent}
+              </p>
+              {stats.votesAgainst > 0 && (
+                <p className="mt-3 font-mono text-xs text-red-700/80">
+                  {stats.votesAgainst.toLocaleString()} agents · dissenting view
+                </p>
+              )}
+            </section>
+          )}
+
+          {hasEvidence && (
+            <section>
+              <div className="flex items-center justify-between gap-4 mb-5">
+                <h3 className="text-lg font-bold text-gray-900">Top Evidence</h3>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
+                  From swarm research
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {evidence.map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm hover:border-orange-300 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-orange-500">
+                        {item.source}
+                      </span>
+                      <ExternalLink
+                        size={14}
+                        className="text-gray-400 group-hover:text-orange-500 shrink-0"
+                      />
+                    </div>
+                    <h4 className="font-semibold text-gray-900 text-sm mb-2 leading-snug">
+                      {item.title}
+                    </h4>
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                      {item.snippet}
+                    </p>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <aside className="lg:sticky lg:top-24">
+          <section className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-orange-500/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-orange-600/5 blur-3xl" />
+
+            <div className="relative p-6">
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">
+                    🎛️ What-If Sandbox
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    First 3 tweaks are free!
+                  </p>
+                </div>
+                <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest text-orange-700">
+                  Sandbox
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                    Price
+                  </span>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <input
+                      type="range"
+                      min={0}
+                      max={500}
+                      step={1}
+                      value={sandboxPrice}
+                      onChange={(e) => setSandboxPrice(Number(e.target.value))}
+                      className="w-full h-1.5 accent-orange-500"
+                    />
+                    <span className="w-16 text-right font-mono text-sm font-semibold tabular-nums text-gray-900">
+                      ${sandboxPrice}
+                    </span>
+                  </div>
+                </label>
+
+                <label className="block">
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                    Target Audience
+                  </span>
+                  <input
+                    value={sandboxAudience}
+                    onChange={(e) => setSandboxAudience(e.target.value)}
+                    placeholder="e.g. B2B marketers"
+                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                    Marketing Budget
+                  </span>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <input
+                      type="range"
+                      min={0}
+                      max={50000}
+                      step={500}
+                      value={sandboxBudget}
+                      onChange={(e) => setSandboxBudget(Number(e.target.value))}
+                      className="w-full h-1.5 accent-orange-500"
+                    />
+                    <span className="w-20 text-right font-mono text-sm font-semibold tabular-nums text-gray-900">
+                      ${sandboxBudget.toLocaleString()}
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="mt-5">
+                <button
+                  type="button"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-black"
+                >
+                  Re-Simulate (10 Credits)
+                </button>
+                <p className="mt-2 text-xs text-gray-500">
+                  Tweak inputs to explore alternate outcomes. Results update after re-simulation.
+                </p>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }
