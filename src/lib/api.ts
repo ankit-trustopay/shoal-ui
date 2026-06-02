@@ -317,3 +317,23 @@ export async function getSwarm(swarmId: string): Promise<SwarmRecord> {
 
   return body;
 }
+
+export async function getDebate(debateId: string): Promise<SwarmRecord> {
+  const res = await apiFetch(`/api/debates/${encodeURIComponent(debateId)}`);
+  const data: unknown = await res.json();
+
+  if (!res.ok) {
+    throw new ApiRequestError(
+      parseErrorMessage(data, 'Failed to load debate'),
+      res.status,
+    );
+  }
+
+  const body = data as SwarmRecord & ApiErrorBody;
+
+  if (!body.premise) {
+    throw new ApiRequestError('Debate data is incomplete', res.status);
+  }
+
+  return body;
+}

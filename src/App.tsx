@@ -10,7 +10,7 @@ import { Contact } from './pages/Contact';
 import { Product } from './pages/Product';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
-import { LiveSwarm } from './pages/LiveSwarm';
+import { Debate } from './pages/Debate';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import { AppShell } from './components/AppShell';
 import { useLocation } from 'react-router-dom';
@@ -114,7 +114,7 @@ function DebateRoute() {
     <>
       <SignedIn>
         <AppShell>
-          <LiveSwarm />
+          <Debate />
         </AppShell>
       </SignedIn>
       <SignedOut>
