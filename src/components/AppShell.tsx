@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -15,6 +15,7 @@ import { ClerkAuthBridge } from './auth/ClerkAuthBridge';
 import { AppSidebarNav } from './AppSidebarNav';
 import { MobileNavDrawer } from './MobileNavDrawer';
 import { UserAccountMenu } from './UserAccountMenu';
+import { ConsoleToast, useConsoleToast } from './ui/ConsoleToast';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -28,8 +29,15 @@ const navItems = [
 ];
 
 function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
-  const { credits, loading, error: accountError } = useUserAccount();
-  const creditsLabel = loading ? '…' : accountError ? '—' : credits.toLocaleString();
+  const { loading, error: accountError } = useUserAccount();
+  const { toastMessage, showToast } = useConsoleToast();
+
+  // Dummy data for redesigned header credits display (replace with API fields later).
+  const { dailyCredits, vaultCredits, totalCredits } = useMemo(() => {
+    const daily = 120;
+    const vault = 35;
+    return { dailyCredits: daily, vaultCredits: vault, totalCredits: daily + vault };
+  }, []);
 
   return (
     <header className="glass-sticky flex shrink-0 items-center justify-between gap-3 border-b border-gray-200/60 bg-[#FAFAFA]/95 px-4 sm:px-8 py-3 backdrop-blur-md">
@@ -57,18 +65,71 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        <Link
-          to="/app/credits"
-          className="inline-flex items-center gap-1.5 rounded-full border border-gray-200/80 bg-white px-2.5 sm:px-3.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:border-orange-200 hover:bg-orange-50/60"
-          aria-label="View credits and billing"
-        >
-          <ZapIcon size={14} className="text-orange-500 shrink-0" aria-hidden />
-          <span className="tabular-nums">{creditsLabel}</span>
-          <span className="hidden min-[400px]:inline font-medium text-gray-500">Credits</span>
-        </Link>
+        <div className="relative">
+          <Link
+            to="/app/credits"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-gray-200/80 bg-white px-2.5 sm:px-3.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:border-gray-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30"
+            aria-label="View credits and billing"
+          >
+            <ZapIcon size={14} className="text-orange-500 shrink-0" aria-hidden />
+            <span className="tabular-nums">
+              {loading ? '…' : accountError ? '—' : totalCredits.toLocaleString()}
+            </span>
+            <span className="hidden min-[400px]:inline font-medium text-gray-500">
+              Credits
+            </span>
+
+            {/* Premium hover popover */}
+            <div className="pointer-events-none absolute right-0 top-full z-30 mt-2 hidden w-[18.5rem] translate-y-1 opacity-0 transition-all duration-150 group-hover:block group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:block">
+              <div className="rounded-2xl border border-gray-200/70 bg-white/90 p-3 shadow-[0_12px_40px_rgba(0,0,0,0.10)] backdrop-blur">
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Wallet
+                  </div>
+
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-gray-900">
+                        Daily Free
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Resets at midnight
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-sm font-semibold tabular-nums text-gray-900">
+                      {dailyCredits.toLocaleString()} / 150
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-gray-200/70" />
+
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-semibold text-gray-900">Vault</div>
+                    <div className="text-sm font-semibold tabular-nums text-gray-900">
+                      {vaultCredits.toLocaleString()} Credits
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      showToast('Credit purchases are coming soon.');
+                    }}
+                    className="pointer-events-auto mt-2 inline-flex w-full items-center justify-center rounded-xl bg-orange-500 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600 active:bg-orange-600"
+                  >
+                    Buy Credits
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
 
         <UserAccountMenu />
       </div>
+
+      <ConsoleToast message={toastMessage} />
     </header>
   );
 }
