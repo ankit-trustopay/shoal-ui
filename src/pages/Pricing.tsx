@@ -15,7 +15,7 @@ export function Pricing() {
       <PageHero
         kicker="Pricing"
         title="Intelligence-as-a-Service."
-        description="Start on the Free Plan with 50 daily credits. Upgrade to unlock larger swarms and monthly credit pools."
+        description="Start on the Free Tier with 150 daily free credits. Upgrade to unlock larger swarms and monthly vault credit pools."
       />
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16 md:pb-20">
@@ -86,7 +86,7 @@ export function Pricing() {
         <BentoCard hover padding="lg" className="rounded-2xl">
           <h3 className={cn(headingCard, 'text-xl mb-2')}>Linear, predictable math</h3>
           <p className="text-gray-600">
-            Free Plan includes 50 daily credits. Paid plans add monthly credit pools
+            Free Tier includes 150 daily free credits. Paid tiers add monthly vault credits
             so you can run larger swarms without surprise bills.
           </p>
         </BentoCard>

@@ -54,8 +54,8 @@ const plans: Plan[] = saasPlans.map((tier) => ({
   category:
     tier.id === 'free'
       ? 'FREE SWARM'
-      : tier.id === 'enterprise'
-        ? 'ENTERPRISE SWARM'
+      : tier.id === 'max'
+        ? 'MAX SWARM'
         : `${tier.name.toUpperCase()} SWARM`,
   icon: tier.icon,
   description: `Up to ${tier.maxAgentsPerTask.toLocaleString()} agents · ${tier.creditAllowance}`,
@@ -69,8 +69,7 @@ const plans: Plan[] = saasPlans.map((tier) => ({
 const planRank: Record<SaasPlanId, number> = {
   free: 0,
   pro: 1,
-  business: 2,
-  enterprise: 3,
+  max: 2,
 };
 
 const PLAN_AGENT_MAX = Object.fromEntries(
@@ -78,10 +77,9 @@ const PLAN_AGENT_MAX = Object.fromEntries(
 ) as Record<SaasPlanId, number>;
 
 const PLAN_AGENT_DEFAULT: Record<SaasPlanId, number> = {
-  free: 5,
-  pro: 100,
-  business: 500,
-  enterprise: 2000,
+  free: 25,
+  pro: 200,
+  max: 1000,
 };
 
 function isAccessible(p: Plan, userPlanId: SaasPlanId) {

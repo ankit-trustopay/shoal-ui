@@ -74,8 +74,8 @@ export function HowCreditsWorkSection() {
       <div className="mt-6 flex items-start gap-3 rounded-xl border border-gray-200/80 bg-white/80 px-4 py-3">
         <ZapIcon size={18} className="text-orange-500 shrink-0 mt-0.5" aria-hidden />
         <p className="text-sm text-gray-700">
-          <span className="font-semibold text-black">Free Plan</span> includes{' '}
-          <span className="font-semibold">50 daily credits</span> — enough for a 50-agent
+          <span className="font-semibold text-black">Free Tier</span> includes{' '}
+          <span className="font-semibold">150 daily free credits</span> — enough for a 150-agent
           swarm each day, or multiple smaller runs.
         </p>
       </div>

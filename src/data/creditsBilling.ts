@@ -1,21 +1,15 @@
-import {
-  Building2Icon,
-  CrownIcon,
-  RocketIcon,
-  ZapIcon,
-  type LucideIcon,
-} from 'lucide-react';
+import { CrownIcon, RocketIcon, ZapIcon, type LucideIcon } from 'lucide-react';
 
 /** Mock wallet balance until backend billing is wired */
-export const FREE_TIER_AVAILABLE_CREDITS = 50;
+export const FREE_TIER_AVAILABLE_CREDITS = 150;
 
 /** Daily allowance on Free tier */
-export const DAILY_FREE_CREDITS_TOTAL = 50;
+export const DAILY_FREE_CREDITS_TOTAL = 150;
 
 export const FREE_TIER_PLAN_LABEL = 'Free Tier';
 export const FREE_TIER_SIDEBAR_LABEL = 'Free Plan';
 
-export type SaasPlanId = 'free' | 'pro' | 'business' | 'enterprise';
+export type SaasPlanId = 'free' | 'pro' | 'max';
 
 export const CURRENT_BILLING_PLAN_ID: SaasPlanId = 'free';
 
@@ -35,67 +29,48 @@ export interface SaasPlan {
 export const saasPlans: SaasPlan[] = [
   {
     id: 'free',
-    name: 'Free',
+    name: 'Free Tier',
     price: '$0',
-    period: '/mo',
+    period: '/ mo',
     icon: ZapIcon,
-    tagline: 'Explore the consensus engine',
-    maxAgentsPerTask: 5,
-    creditAllowance: '50 Daily Credits',
+    tagline: 'Get started with daily free credits',
+    maxAgentsPerTask: 50,
+    creditAllowance: '150 Daily Free Credits',
     features: [
-      '5 Agents per task',
-      '50 Daily Credits',
-      'Full debate transcripts',
-      'Community support',
+      '150 Daily Free Credits',
+      'Lite Model Access',
+      'Community Support',
     ],
   },
   {
     id: 'pro',
-    name: 'Pro',
-    price: '$20',
-    period: '/mo',
+    name: 'Pro Tier',
+    price: '$49',
+    period: '/ mo',
     icon: RocketIcon,
-    tagline: 'For operators shipping weekly decisions',
-    maxAgentsPerTask: 100,
-    creditAllowance: '10,000 Monthly Credits',
+    tagline: 'Scale to larger swarms with vault credits',
+    maxAgentsPerTask: 1000,
+    creditAllowance: '10,000 Monthly Vault Credits',
     features: [
-      '100 Agents per task',
-      '10,000 Monthly Credits',
-      'Priority processing',
-      'Email support',
+      '10,000 Monthly Vault Credits',
+      'Lite & Plus Models',
+      'Priority Processing',
     ],
     highlight: 'popular',
   },
   {
-    id: 'business',
-    name: 'Business',
-    price: '$100',
-    period: '/mo',
+    id: 'max',
+    name: 'Max Tier',
+    price: '$249',
+    period: '/ mo',
     icon: CrownIcon,
-    tagline: 'Boardroom-grade demographic simulation',
-    maxAgentsPerTask: 1000,
-    creditAllowance: '100,000 Monthly Credits',
-    features: [
-      '1,000 Agents per task',
-      '100,000 Monthly Credits',
-      'Deep demographic profiling',
-      'Priority compute routing',
-    ],
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: '$500',
-    period: '/mo',
-    icon: Building2Icon,
-    tagline: 'Institutional scale & API access',
+    tagline: 'Maximum scale, API access, and support',
     maxAgentsPerTask: 10000,
-    creditAllowance: '2,000,000 Monthly Credits',
+    creditAllowance: '75,000 Monthly Vault Credits',
     features: [
-      '10,000 Agents per task',
-      '2,000,000 Monthly Credits',
+      '75,000 Monthly Vault Credits',
       'API Access',
-      'Dedicated account manager',
+      'Dedicated Manager',
     ],
     highlight: 'enterprise',
   },

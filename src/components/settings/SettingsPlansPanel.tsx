@@ -70,8 +70,7 @@ function PlanCard({
   const planRank: Record<SettingsPlan['id'], number> = {
     free: 0,
     pro: 1,
-    business: 2,
-    enterprise: 3,
+    max: 2,
   };
   const isUpgrade =
     planRank[plan.id] > planRank[currentPlanId as SettingsPlan['id']];
