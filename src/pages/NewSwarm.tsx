@@ -8,6 +8,7 @@ import {
   PaperclipIcon,
   LinkIcon,
   XIcon,
+  ZapIcon,
 } from 'lucide-react';
 import { SwarmIgnitionProgress } from '../components/swarm/live-console/SwarmIgnitionProgress';
 import { createDebate } from '../lib/api';
@@ -72,7 +73,9 @@ const PLAN_AGENT_DEFAULT: Record<SaasPlanId, number> = {
 };
 
 function isAccessible(p: Plan, userPlanId: SaasPlanId) {
-  return planRank[p.requiredPlan] <= planRank[userPlanId];
+  const userRank = planRank[userPlanId] ?? 0;
+  const requiredRank = planRank[p.requiredPlan] ?? 0;
+  return requiredRank <= userRank;
 }
 function truncate(text: string, max = 70) {
   return text.length > max ? text.slice(0, max).trimEnd() + '...' : text;
@@ -86,16 +89,17 @@ export function NewSwarm() {
   const [agentCount, setAgentCount] = useState(PLAN_AGENT_DEFAULT.free);
   const [isIgniting, setIsIgniting] = useState(false);
   const [igniteError, setIgniteError] = useState<string | null>(null);
-  const [planOpen, setPlanOpen] = useState(false);
-  const planRef = useRef<HTMLDivElement>(null);
+  const [isTierOpen, setIsTierOpen] = useState(false);
+  const tierMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [linkInputOpen, setLinkInputOpen] = useState(false);
   const [linkValue, setLinkValue] = useState('');
   const [attachedLinks, setAttachedLinks] = useState<string[]>([]);
   const [modelMix, setModelMix] = useState(0); // 0..100 (% Plus)
-  const activePlan = plans.find((p) => p.id === planId) ?? plans[0];
-  const ActiveIcon = activePlan.icon;
+  const activePlan = plans.find((p) => p.id === planId) ?? plans[0] ?? null;
+  const ActiveIcon = activePlan?.icon ?? ZapIcon;
+  const activePlanName = activePlan?.name ?? 'Free';
   const maxAgents = PLAN_AGENT_MAX[userPlanId] ?? PLAN_AGENT_MAX.free;
   const plusAgents = Math.round((agentCount * modelMix) / 100);
   const liteAgents = Math.max(0, agentCount - plusAgents);
@@ -120,14 +124,16 @@ export function NewSwarm() {
   }, [maxAgents, userPlanId]);
 
   useEffect(() => {
+    if (!isTierOpen) return;
+
     function onClick(e: MouseEvent) {
-      if (planRef.current && !planRef.current.contains(e.target as Node)) {
-        setPlanOpen(false);
+      if (tierMenuRef.current && !tierMenuRef.current.contains(e.target as Node)) {
+        setIsTierOpen(false);
       }
     }
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
-  }, []);
+  }, [isTierOpen]);
 
   const handleIgniteSwarm = useCallback(async () => {
     const query = prompt.trim();
@@ -429,91 +435,117 @@ export function NewSwarm() {
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 w-full sm:w-auto">
-              <div className="relative w-full sm:w-auto" ref={planRef}>
+              <div className="relative w-full sm:w-auto" ref={tierMenuRef}>
                 <button
                   type="button"
-                  onClick={() => setPlanOpen((v) => !v)}
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
-                  
-                  <ActiveIcon size={13} className="text-axiom" />
-                  {activePlan.name}
-                  <ChevronDownIcon size={13} className="text-gray-400" />
+                  aria-expanded={isTierOpen}
+                  aria-haspopup="listbox"
+                  onClick={() => setIsTierOpen((open) => !open)}
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+                >
+                  <ActiveIcon size={13} className="text-axiom shrink-0" />
+                  <span>{activePlanName}</span>
+                  <ChevronDownIcon
+                    size={13}
+                    className={`text-gray-400 shrink-0 transition-transform ${isTierOpen ? 'rotate-180' : ''}`}
+                  />
                 </button>
 
-                {planOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 overflow-hidden rounded-md border border-gray-200 bg-white shadow-xl z-50">
-                    <div className="px-4 py-2.5 border-b border-gray-100">
+                {isTierOpen && (
+                  <div
+                    role="listbox"
+                    className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-md border bg-white shadow-xl"
+                  >
+                    <div className="border-b border-gray-100 px-4 py-2.5">
                       <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-                        Swarm Tier
+                        Swarm tier
                       </span>
                     </div>
 
-                    <div className="py-1 max-h-[420px] overflow-y-auto">
-                      {plans.map((plan) => {
-                      const Icon = plan.icon;
-                      const isSelected = plan.id === planId;
-                      const accessible = isAccessible(plan, userPlanId);
-                      return (
-                        <button
-                          key={plan.id}
-                          type="button"
-                          disabled={!accessible}
-                          onClick={() => {
-                            if (!accessible) return;
-                            setPlanId(plan.id);
-                            setAgentCount(PLAN_AGENT_DEFAULT[plan.id]);
-                            setPlanOpen(false);
-                          }}
-                          className={`w-full text-left px-4 py-3 flex items-start gap-3 transition-colors ${isSelected ? 'bg-orange-50' : accessible ? 'hover:bg-gray-50' : 'opacity-60 cursor-not-allowed'}`}>
-                          
-                            <div
-                            className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-axiom text-white' : accessible ? 'bg-gray-100 text-gray-500' : 'bg-gray-100 text-gray-400'}`}>
-                            
-                              <Icon size={16} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <span className="text-sm font-bold text-black">
-                                  {plan.name}
-                                </span>
-                                <span className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
-                                  {plan.category}
-                                </span>
+                    <ul className="max-h-[420px] overflow-y-auto py-1">
+                      {plans.map((tierOption) => {
+                        const TierIcon = tierOption.icon ?? ZapIcon;
+                        const isSelected = tierOption.id === planId;
+                        const accessible = isAccessible(tierOption, userPlanId);
+                        const defaultAgents =
+                          PLAN_AGENT_DEFAULT[tierOption.id] ?? PLAN_AGENT_DEFAULT.free;
+
+                        return (
+                          <li key={tierOption.id}>
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={isSelected}
+                              disabled={!accessible}
+                              onClick={() => {
+                                if (!accessible) return;
+                                setPlanId(tierOption.id);
+                                setAgentCount(defaultAgents);
+                                setIsTierOpen(false);
+                              }}
+                              className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
+                                isSelected
+                                  ? 'bg-orange-50'
+                                  : accessible
+                                    ? 'hover:bg-gray-50'
+                                    : 'cursor-not-allowed opacity-60'
+                              }`}
+                            >
+                              <div
+                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                                  isSelected
+                                    ? 'bg-axiom text-white'
+                                    : 'bg-gray-100 text-gray-500'
+                                }`}
+                              >
+                                <TierIcon size={16} aria-hidden />
                               </div>
-                              <p className="text-xs text-gray-600 leading-snug">
-                                {plan.description}
-                              </p>
-                              <p className="font-mono text-[10px] text-gray-500 tracking-wide mt-1">
-                                {plan.meta}
-                              </p>
-                            </div>
-                            {isSelected ?
-                          <CheckIcon
-                            size={14}
-                            className="text-axiom flex-shrink-0 mt-1" /> :
+                              <div className="min-w-0 flex-1">
+                                <div className="mb-0.5 flex items-center gap-2">
+                                  <span className="text-sm font-bold text-black">
+                                    {tierOption.name}
+                                  </span>
+                                  <span className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
+                                    {tierOption.category}
+                                  </span>
+                                </div>
+                                <p className="text-xs leading-snug text-gray-600">
+                                  {tierOption.description}
+                                </p>
+                                <p className="mt-1 font-mono text-[10px] tracking-wide text-gray-500">
+                                  {tierOption.meta}
+                                </p>
+                              </div>
+                              {isSelected ? (
+                                <CheckIcon
+                                  size={14}
+                                  className="mt-1 shrink-0 text-axiom"
+                                  aria-hidden
+                                />
+                              ) : !accessible ? (
+                                <LockIcon
+                                  size={13}
+                                  className="mt-1 shrink-0 text-gray-400"
+                                  aria-hidden
+                                />
+                              ) : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
 
-                          !accessible ?
-                          <LockIcon
-                            size={13}
-                            className="text-gray-400 flex-shrink-0 mt-1" /> :
-
-                          null}
-                          </button>);
-
-                    })}
-                    </div>
-
-                    <div className="px-4 py-2.5 border-t border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center justify-between border-t border-gray-100 px-4 py-2.5">
                       <a
-                      href="/pricing"
-                      className="text-sm text-axiom font-medium hover:underline inline-flex items-center gap-1">
-                      
+                        href="/app/credits"
+                        className="inline-flex items-center gap-1 text-sm font-medium text-axiom hover:underline"
+                      >
                         Compare plans →
                       </a>
                       <a
-                      href="/app/settings"
-                      className="text-xs text-gray-500 hover:text-black">
-                      
+                        href="/app/settings"
+                        className="text-xs text-gray-500 hover:text-black"
+                      >
                         Upgrade
                       </a>
                     </div>

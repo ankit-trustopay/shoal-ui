@@ -152,11 +152,13 @@ export function Credits() {
         )}
         </div>
 
-        <div className="w-full">
+        <div className="w-full max-w-6xl mx-auto">
           <PricingTierCards currentPlanId={planId} onUpgrade={handleUpgrade} />
         </div>
 
-        <HowCreditsWorkSection />
+        <div className="w-full max-w-6xl mx-auto mt-16">
+          <HowCreditsWorkSection />
+        </div>
 
         <div className="w-full mb-10 md:mb-14">
           <BuyExtraCreditsPanel onBuyCredits={handleBuyCredits} />
