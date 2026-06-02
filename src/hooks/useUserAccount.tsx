@@ -12,6 +12,8 @@ import { getUserAccount, type UserAccount } from '../lib/api';
 import { normalizePlanId } from '../lib/planLabels';
 
 interface UserAccountContextValue {
+  /** Wallet record from GET /api/user/me */
+  user: UserAccount | null;
   account: UserAccount | null;
   totalCredits: number;
   dailyCredits: number;
@@ -30,7 +32,7 @@ const UserAccountContext = createContext<UserAccountContextValue | null>(null);
 const WALLET_ERROR_MESSAGE = 'Failed to load wallet. Please refresh.';
 
 export function UserAccountProvider({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
   const [account, setAccount] = useState<UserAccount | null>(null);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function UserAccountProvider({ children }: { children: React.ReactNode })
     setError(null);
 
     try {
-      const data = await getUserAccount();
+      const data = await getUserAccount({ getToken });
       setAccount(data);
     } catch (err) {
       setAccount(null);
@@ -63,7 +65,7 @@ export function UserAccountProvider({ children }: { children: React.ReactNode })
     } finally {
       setFetching(false);
     }
-  }, [isLoaded, isSignedIn]);
+  }, [getToken, isLoaded, isSignedIn]);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -74,21 +76,24 @@ export function UserAccountProvider({ children }: { children: React.ReactNode })
 
   const loading = !isLoaded || fetching;
 
-  const value = useMemo<UserAccountContextValue>(
-    () => ({
-      account,
-      dailyCredits: account?.dailyCredits ?? 0,
-      vaultCredits: account?.vaultCredits ?? 0,
-      totalCredits: (account?.dailyCredits ?? 0) + (account?.vaultCredits ?? 0),
-      credits: (account?.dailyCredits ?? 0) + (account?.vaultCredits ?? 0),
-      plan: account?.plan ?? 'FREE',
-      planId: normalizePlanId(account?.plan ?? 'FREE'),
+  const value = useMemo<UserAccountContextValue>(() => {
+    const user = account;
+    const totalCredits = (user?.dailyCredits || 0) + (user?.vaultCredits || 0);
+
+    return {
+      user,
+      account: user,
+      dailyCredits: user?.dailyCredits || 0,
+      vaultCredits: user?.vaultCredits || 0,
+      totalCredits,
+      credits: totalCredits,
+      plan: user?.plan ?? 'FREE',
+      planId: normalizePlanId(user?.plan ?? 'FREE'),
       loading,
       error,
       refresh,
-    }),
-    [account, loading, error, refresh],
-  );
+    };
+  }, [account, loading, error, refresh]);
 
   return (
     <UserAccountContext.Provider value={value}>{children}</UserAccountContext.Provider>

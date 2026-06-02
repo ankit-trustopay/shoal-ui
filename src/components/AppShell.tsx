@@ -29,8 +29,7 @@ const navItems = [
 ];
 
 function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
-  const { loading, error: accountError, dailyCredits, vaultCredits, totalCredits } =
-    useUserAccount();
+  const { loading, error: accountError, user, totalCredits } = useUserAccount();
   const { toastMessage, showToast } = useConsoleToast();
 
   return (
@@ -66,30 +65,34 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
             aria-label="View credits and billing"
           >
             <ZapIcon size={14} className="text-orange-500 shrink-0" aria-hidden />
-            <span className="tabular-nums">
-              {loading ? (
-                <span
-                  className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-orange-500 align-middle"
-                  aria-label="Loading credits"
-                />
-              ) : accountError ? (
-                '0'
-              ) : (
-                totalCredits.toLocaleString()
-              )}
-            </span>
-            <span className="hidden min-[400px]:inline font-medium text-gray-500">
-              Credits
-            </span>
+            {loading ? (
+              <span
+                className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-orange-500"
+                aria-label="Loading credits"
+              />
+            ) : (
+              <span className="tabular-nums whitespace-nowrap">
+                {accountError ? '—' : `${totalCredits.toLocaleString()} Credits`}
+              </span>
+            )}
 
             {/* Premium hover popover */}
-            <div className="pointer-events-none absolute right-0 top-full mt-2 hidden w-64 translate-y-1 opacity-0 transition-all duration-150 group-hover:block group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:block z-50">
-              <div className="border rounded-md bg-white shadow-xl">
+            <div className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-64 translate-y-1 opacity-0 transition-all duration-150 group-hover:block group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:block">
+              <div className="rounded-md border bg-white p-3 shadow-xl">
                 <div className="space-y-2">
                   <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Wallet
                   </div>
 
+                  {loading ? (
+                    <div className="flex justify-center py-3">
+                      <span
+                        className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-orange-500"
+                        aria-label="Loading wallet"
+                      />
+                    </div>
+                  ) : (
+                    <>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-gray-900">
@@ -100,7 +103,7 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
                       </div>
                     </div>
                     <div className="shrink-0 text-sm font-semibold tabular-nums text-gray-900">
-                      {accountError ? '0 / 150' : `${dailyCredits.toLocaleString()} / 150`}
+                      {`${user?.dailyCredits || 0} / 150`}
                     </div>
                   </div>
 
@@ -109,9 +112,11 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-gray-900">Vault</div>
                     <div className="text-sm font-semibold tabular-nums text-gray-900">
-                      {accountError ? '0 Credits' : `${vaultCredits.toLocaleString()} Credits`}
+                      {`${user?.vaultCredits || 0}`}
                     </div>
                   </div>
+                    </>
+                  )}
 
                   <button
                     type="button"
@@ -177,9 +182,11 @@ function AppShellSidebar({ children }: { children: React.ReactNode }) {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <UserAccountProvider>
+    <>
       <ClerkAuthBridge />
-      <AppShellSidebar>{children}</AppShellSidebar>
-    </UserAccountProvider>
+      <UserAccountProvider>
+        <AppShellSidebar>{children}</AppShellSidebar>
+      </UserAccountProvider>
+    </>
   );
 }

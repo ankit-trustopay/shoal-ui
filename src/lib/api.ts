@@ -178,8 +178,98 @@ export interface UserAccount {
   plan: string;
 }
 
-export async function getUserAccount(): Promise<UserAccount> {
-  const res = await apiFetch('/api/user/me');
+function parseWalletNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.floor(value));
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return Math.max(0, Math.floor(parsed));
+    }
+  }
+  return null;
+}
+
+function parseUserAccountPayload(data: unknown): UserAccount {
+  if (!data || typeof data !== 'object') {
+    throw new ApiRequestError('Invalid account response');
+  }
+
+  const body = data as Record<string, unknown>;
+
+  let dailyCredits =
+    parseWalletNumber(body.dailyCredits) ??
+    parseWalletNumber(body.daily_credits);
+  let vaultCredits =
+    parseWalletNumber(body.vaultCredits) ??
+    parseWalletNumber(body.vault_credits) ??
+    0;
+
+  // Legacy API: single `credits` field maps to daily wallet.
+  const legacyCredits = parseWalletNumber(body.credits);
+  if (dailyCredits === null && legacyCredits !== null) {
+    dailyCredits = legacyCredits;
+  }
+
+  if (dailyCredits === null) {
+    dailyCredits = 0;
+  }
+
+  const plan =
+    typeof body.plan === 'string' && body.plan.trim()
+      ? body.plan.trim()
+      : 'FREE';
+
+  return {
+    dailyCredits,
+    vaultCredits,
+    plan,
+  };
+}
+
+export async function getUserAccount(options?: {
+  getToken?: () => Promise<string | null>;
+}): Promise<UserAccount> {
+  const token = options?.getToken
+    ? await options.getToken()
+    : await resolveAuthToken();
+
+  if (!token) {
+    throw new ApiRequestError(
+      'Your session is not ready. Please refresh the page.',
+      401,
+    );
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/user/me`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiRequestError(
+        'The request timed out. Please check your connection and refresh.',
+        0,
+      );
+    }
+    throw new ApiRequestError(
+      error instanceof Error ? error.message : 'Network request failed',
+      0,
+    );
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+
   const data: unknown = await res.json();
 
   if (!res.ok) {
@@ -189,21 +279,7 @@ export async function getUserAccount(): Promise<UserAccount> {
     );
   }
 
-  const body = data as UserAccount & ApiErrorBody;
-
-  if (
-    typeof body.dailyCredits !== 'number' ||
-    typeof body.vaultCredits !== 'number' ||
-    typeof body.plan !== 'string'
-  ) {
-    throw new ApiRequestError('Invalid account response', res.status);
-  }
-
-  return {
-    dailyCredits: body.dailyCredits,
-    vaultCredits: body.vaultCredits,
-    plan: body.plan,
-  };
+  return parseUserAccountPayload(data);
 }
 
 export async function createSwarm(
