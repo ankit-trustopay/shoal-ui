@@ -83,8 +83,11 @@ function normalizeProfile(raw: unknown, index: number): AgentProfile | null {
   if (!isRecord(raw)) return null;
 
   const name = readString(raw, 'name', 'Name');
-  const role = readString(raw, 'role', 'Role');
-  if (!name || !role) return null;
+  const role =
+    readString(raw, 'role', 'Role') ||
+    readString(raw, 'position', 'Position') ||
+    name;
+  if (!name) return null;
 
   const id = readNumber(raw, 'id', 'Id') ?? index + 1;
   const age = readNumber(raw, 'age', 'Age') ?? 30;
@@ -115,6 +118,7 @@ function normalizeProfile(raw: unknown, index: number): AgentProfile | null {
     biases: readString(raw, 'biases', 'Biases') || 'No bias data recorded.',
     backstory:
       readString(raw, 'backstory', 'Backstory') ||
+      readString(raw, 'position', 'Position') ||
       'No backstory available for this agent.',
   };
 }
