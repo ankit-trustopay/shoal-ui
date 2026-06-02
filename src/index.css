@@ -13,6 +13,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #fafafa;
   color: #0a0a0a;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 @layer components {

@@ -1,19 +1,20 @@
 import React from 'react';
-import { CalculatorIcon, UsersIcon, ZapIcon } from 'lucide-react';
+import { CalculatorIcon, InfoIcon } from 'lucide-react';
 import { MonoLabel } from '../ui/MonoLabel';
 
-const examples = [
-  {
-    agents: 100,
-    cost: 100,
-    label: 'Team litmus test',
-  },
-  {
-    agents: 1000,
-    cost: 1000,
-    label: 'Boardroom-scale swarm',
-  },
-];
+function InfoTooltip({ label }: { label: string }) {
+  return (
+    <span className="relative inline-flex items-center">
+      <span className="group inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500">
+        <InfoIcon size={12} aria-hidden />
+        <span className="sr-only">Info</span>
+        <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+          {label}
+        </span>
+      </span>
+    </span>
+  );
+}
 
 export function HowCreditsWorkSection() {
   return (
@@ -33,51 +34,46 @@ export function HowCreditsWorkSection() {
           >
             How credits work
           </h2>
-          <p className="text-base md:text-lg font-semibold text-gray-900 mb-2">
-            1 Virtual Human = 1 Credit.
-          </p>
-          <p className="text-sm md:text-base text-gray-600 leading-relaxed">
-            Every simulated person in your swarm draws exactly one credit. No hidden
-            multipliers, no surprise line items — the math is linear and predictable.
-          </p>
-        </div>
-
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-500/25">
-          <UsersIcon size={28} aria-hidden />
-        </div>
-      </div>
-
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {examples.map((example) => (
-          <div
-            key={example.agents}
-            className="rounded-xl border border-orange-200/80 bg-white p-5"
-          >
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2">
-              {example.label}
-            </p>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              Running a{' '}
-              <span className="font-bold text-black tabular-nums">
-                {example.agents.toLocaleString()}-agent
-              </span>{' '}
-              swarm costs exactly{' '}
-              <span className="font-bold text-orange-600 tabular-nums">
-                {example.cost.toLocaleString()} credits
-              </span>
-              .
-            </p>
+          <div className="space-y-3 text-sm md:text-base text-gray-700 leading-relaxed">
+            <div className="flex items-start gap-3">
+              <span className="mt-1 h-2 w-2 rounded-full bg-orange-500/70" />
+              <p>
+                <span className="font-semibold text-gray-900">
+                  Lite Models (1 Credit/Agent):
+                </span>{' '}
+                Fast, efficient models for standard reasoning.{' '}
+                <InfoTooltip label="Lite runs prioritize speed and cost efficiency for everyday decisions." />
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="mt-1 h-2 w-2 rounded-full bg-gray-900/70" />
+              <p>
+                <span className="font-semibold text-gray-900">
+                  Plus Models (5 Credits/Agent):
+                </span>{' '}
+                Advanced models for deep, complex reasoning.{' '}
+                <InfoTooltip label="Plus runs use more capable models for harder prompts and nuanced tradeoffs." />
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="mt-1 h-2 w-2 rounded-full bg-orange-500/50" />
+              <p>
+                <span className="font-semibold text-gray-900">What-If Tweaks:</span>{' '}
+                Your first 3 tweaks on any debate are 100% FREE. After that, it's a
+                flat 10 Credits per tweak.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="mt-1 h-2 w-2 rounded-full bg-orange-500/50" />
+              <p>
+                <span className="font-semibold text-gray-900">Top-Ups:</span> $5
+                gets you 1,000 Credits instantly.
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      <div className="mt-6 flex items-start gap-3 rounded-xl border border-gray-200/80 bg-white/80 px-4 py-3">
-        <ZapIcon size={18} className="text-orange-500 shrink-0 mt-0.5" aria-hidden />
-        <p className="text-sm text-gray-700">
-          <span className="font-semibold text-black">Free Tier</span> includes{' '}
-          <span className="font-semibold">150 daily free credits</span> — enough for a 150-agent
-          swarm each day, or multiple smaller runs.
-        </p>
+        <div className="hidden lg:block h-14 w-14 shrink-0" aria-hidden />
       </div>
     </section>
   );

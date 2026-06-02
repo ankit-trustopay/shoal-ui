@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowUpIcon,
   ChevronDownIcon,
-  CheckIcon,
   LockIcon,
   PaperclipIcon,
   LinkIcon,
@@ -16,17 +15,6 @@ import {
   saasPlans,
   type SaasPlanId,
 } from '../data/creditsBilling';
-
-type CreditModelTier = 'lite' | 'plus';
-
-const CREDIT_MODEL_OPTIONS: Array<{
-  id: CreditModelTier;
-  label: string;
-  creditsPerAgent: number;
-}> = [
-  { id: 'lite', label: '🧠 Lite Model (1 cr/agent)', creditsPerAgent: 1 },
-  { id: 'plus', label: '🧠 Plus Model (5 cr/agent)', creditsPerAgent: 5 },
-];
 
 const examplePrompts = [
   'Should we raise a Series A now or extend runway 9 months and chase $4M ARR first?',
@@ -95,9 +83,6 @@ export function NewSwarm() {
   const [prompt, setPrompt] = useState('');
   const [planId, setPlanId] = useState<Plan['id']>('free');
   const [agentCount, setAgentCount] = useState(PLAN_AGENT_DEFAULT.free);
-  const [modelTier, setModelTier] = useState<CreditModelTier>('lite');
-  const [modelOpen, setModelOpen] = useState(false);
-  const modelRef = useRef<HTMLDivElement>(null);
   const [isIgniting, setIsIgniting] = useState(false);
   const [igniteError, setIgniteError] = useState<string | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
@@ -107,17 +92,13 @@ export function NewSwarm() {
   const [linkInputOpen, setLinkInputOpen] = useState(false);
   const [linkValue, setLinkValue] = useState('');
   const [attachedLinks, setAttachedLinks] = useState<string[]>([]);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [targetAudience, setTargetAudience] = useState('');
-  const [pricePoint, setPricePoint] = useState('');
-  const [marketingBudget, setMarketingBudget] = useState('');
+  const [modelMix, setModelMix] = useState(0); // 0..100 (% Plus)
   const activePlan = plans.find((p) => p.id === planId) ?? plans[0];
   const ActiveIcon = activePlan.icon;
-  const activeModel =
-    CREDIT_MODEL_OPTIONS.find((model) => model.id === modelTier) ??
-    CREDIT_MODEL_OPTIONS[0];
   const maxAgents = PLAN_AGENT_MAX[userPlanId] ?? PLAN_AGENT_MAX.free;
-  const estimatedCost = agentCount * activeModel.creditsPerAgent;
+  const plusAgents = Math.round((agentCount * modelMix) / 100);
+  const liteAgents = Math.max(0, agentCount - plusAgents);
+  const estimatedCost = liteAgents * 1 + plusAgents * 5;
   const insufficientCredits = estimatedCost > credits;
   const canIgnite =
     prompt.trim().length > 0 && !isIgniting && !insufficientCredits;
@@ -142,9 +123,6 @@ export function NewSwarm() {
       if (planRef.current && !planRef.current.contains(e.target as Node)) {
         setPlanOpen(false);
       }
-      if (modelRef.current && !modelRef.current.contains(e.target as Node)) {
-        setModelOpen(false);
-      }
     }
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
@@ -158,15 +136,15 @@ export function NewSwarm() {
     setIgniteError(null);
 
     try {
+      // We currently persist one modelTier field; with model mix, treat any plus %
+      // as a "plus" run for backend routing until mix is fully modeled server-side.
+      const modelTier = modelMix > 0 ? 'plus' : 'lite';
+
       const { debateId } = await createDebate({
         query,
         agentCount,
         modelTier,
-        advancedVariables: {
-          targetAudience: targetAudience.trim() || undefined,
-          pricePoint: pricePoint.trim() || undefined,
-          marketingBudget: marketingBudget.trim() || undefined,
-        },
+        advancedVariables: {},
       });
       await refresh();
       navigate(`/debate/${encodeURIComponent(debateId)}`);
@@ -180,10 +158,7 @@ export function NewSwarm() {
   }, [
     prompt,
     agentCount,
-    modelTier,
-    targetAudience,
-    pricePoint,
-    marketingBudget,
+    modelMix,
     credits,
     estimatedCost,
     isIgniting,
@@ -242,9 +217,6 @@ export function NewSwarm() {
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Heading */}
         <div className="text-center pt-8 md:pt-16 mb-10">
-          <div className="font-mono text-xs font-semibold uppercase tracking-widest text-axiom mb-6">
-            Consensus Engine
-          </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-sans font-bold text-black tracking-tighter leading-[1.05] mb-5">
             What should the swarm decide?
           </h1>
@@ -252,53 +224,6 @@ export function NewSwarm() {
             State your dilemma. Shoal AI will dispatch adversarial agents and
             return a defended answer.
           </p>
-        </div>
-
-        {/* Prompt composer */}
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <label
-            htmlFor="ai-model"
-            className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500"
-          >
-            Credit model
-          </label>
-          <div className="relative w-full sm:w-auto" ref={modelRef}>
-            <button
-              id="ai-model"
-              type="button"
-              onClick={() => setModelOpen((open) => !open)}
-              disabled={isIgniting}
-              className="inline-flex w-full sm:w-auto items-center justify-between gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              {activeModel.label}
-              <ChevronDownIcon size={14} className="text-gray-400 shrink-0" />
-            </button>
-            {modelOpen && (
-              <div className="global-overlay absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-72 overflow-hidden rounded-xl isolate">
-                {CREDIT_MODEL_OPTIONS.map((model) => {
-                  const isSelected = model.id === modelTier;
-                  return (
-                    <button
-                      key={model.id}
-                      type="button"
-                      onClick={() => {
-                        setModelTier(model.id);
-                        setModelOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors ${
-                        isSelected
-                          ? 'bg-orange-50 text-axiom font-semibold'
-                          : 'text-gray-800 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="truncate pr-3">{model.label}</span>
-                      {isSelected && <CheckIcon size={14} className="text-axiom" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="bg-white border border-gray-200/60 rounded-2xl shadow-bento hover:shadow-bento-hover transition-shadow duration-200">
@@ -309,70 +234,24 @@ export function NewSwarm() {
             placeholder="e.g. Should we expand into the EU market this quarter, or wait until we hit $4M ARR and have clearer regulatory footing?"
             className="w-full bg-transparent px-6 pt-5 pb-3 text-base text-black placeholder:text-gray-400 focus:outline-none resize-none leading-relaxed" />
 
-          {/* Advanced variables */}
-          <div className="px-6 pb-4 border-t border-gray-100 pt-4">
-            <button
-              type="button"
-              onClick={() => setAdvancedOpen((v) => !v)}
-              className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-50"
-            >
-              Advanced Variables
-              <ChevronDownIcon
-                size={16}
-                className={`text-gray-400 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-
-            {advancedOpen && (
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <label className="block">
-                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-                    Target Audience
-                  </span>
-                  <input
-                    value={targetAudience}
-                    onChange={(e) => setTargetAudience(e.target.value)}
-                    placeholder="e.g. SMB founders"
-                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30"
-                  />
-                </label>
-                <label className="block">
-                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-                    Price Point
-                  </span>
-                  <input
-                    value={pricePoint}
-                    onChange={(e) => setPricePoint(e.target.value)}
-                    placeholder="e.g. $49/mo"
-                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30"
-                  />
-                </label>
-                <label className="block">
-                  <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-                    Marketing Budget
-                  </span>
-                  <input
-                    value={marketingBudget}
-                    onChange={(e) => setMarketingBudget(e.target.value)}
-                    placeholder="e.g. $5k/mo"
-                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30"
-                  />
-                </label>
-              </div>
-            )}
-          </div>
-
-          {/* Agent count */}
+          {/* Total agents */}
           <div className="px-6 pb-4 border-t border-gray-100 pt-4">
             <div className="flex items-center justify-between gap-4 mb-2">
               <label
                 htmlFor="agent-count"
                 className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-700">
-                Agent count
+                Total agents
               </label>
-              <span className="font-mono text-sm font-semibold text-black tabular-nums">
-                {agentCount.toLocaleString()}
-              </span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={maxAgents}
+                  value={agentCount}
+                  onChange={(e) => setAgentCount(Number(e.target.value))}
+                  className="w-24 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm font-semibold tabular-nums text-gray-900 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25"
+                />
+              </div>
             </div>
             <input
               id="agent-count"
@@ -389,14 +268,34 @@ export function NewSwarm() {
               Up to {maxAgents.toLocaleString()} agents on {activePlan.name} ·{' '}
               {credits.toLocaleString()} credits available
             </p>
-            <p className="mt-2 text-xs text-gray-700">
-              Running <span className="font-semibold tabular-nums">{agentCount.toLocaleString()}</span>{' '}
-              agents will cost exactly{' '}
-              <span className="font-semibold tabular-nums">
-                {estimatedCost.toLocaleString()}
-              </span>{' '}
-              Credits.
-            </p>
+
+            <div className="mt-4">
+              <div className="flex items-center justify-between gap-4 mb-2">
+                <label className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-700">
+                  Model mix
+                </label>
+                <span className="font-mono text-xs font-semibold tabular-nums text-gray-700">
+                  {100 - modelMix}% Lite · {modelMix}% Plus
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={modelMix}
+                onChange={(e) => setModelMix(Number(e.target.value))}
+                disabled={isIgniting}
+                className="w-full h-1.5 cursor-pointer disabled:opacity-50 accent-orange-500"
+              />
+              <p className="mt-2 text-xs text-gray-700">
+                Cost = ({liteAgents.toLocaleString()} Lite × 1) + ({plusAgents.toLocaleString()} Plus × 5) ={' '}
+                <span className="font-semibold tabular-nums">
+                  {estimatedCost.toLocaleString()}
+                </span>{' '}
+                Credits.
+              </p>
+            </div>
             {insufficientCredits && (
               <p className="mt-2 text-xs font-medium text-red-600">
                 This swarm costs {estimatedCost.toLocaleString()} credits — you have{' '}
@@ -634,7 +533,7 @@ export function NewSwarm() {
                 {isIgniting
                   ? 'Igniting...'
                   : insufficientCredits
-                    ? 'Insufficient Credits - Top Up'
+                    ? `Insufficient Credits - Need ${estimatedCost.toLocaleString()}, You have ${credits.toLocaleString()}`
                     : 'Ignite Swarm'}
                 {!isIgniting && !insufficientCredits && <ArrowUpIcon size={14} />}
               </button>

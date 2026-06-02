@@ -19,13 +19,13 @@ export function Pricing() {
       />
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16 md:pb-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="flex flex-col items-stretch gap-6 md:flex-row md:flex-wrap md:justify-center">
           {saasPlans.map((tier) => {
             const Icon = tier.icon;
             const isPopular = tier.highlight === 'popular';
 
             return (
-              <div key={tier.id} className="relative">
+              <div key={tier.id} className="relative w-full md:w-[22rem]">
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                     <div className="bg-white border border-axiom/60 px-4 py-1 rounded-full shadow-bento">

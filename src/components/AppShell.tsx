@@ -67,7 +67,13 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
           >
             <ZapIcon size={14} className="text-orange-500 shrink-0" aria-hidden />
             <span className="tabular-nums">
-              {loading ? '…' : accountError ? '—' : totalCredits.toLocaleString()}
+              {loading ? (
+                <span className="inline-block h-4 w-10 rounded bg-gray-100 animate-pulse align-middle" />
+              ) : accountError ? (
+                '0'
+              ) : (
+                totalCredits.toLocaleString()
+              )}
             </span>
             <span className="hidden min-[400px]:inline font-medium text-gray-500">
               Credits
@@ -91,7 +97,7 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
                       </div>
                     </div>
                     <div className="shrink-0 text-sm font-semibold tabular-nums text-gray-900">
-                      {dailyCredits.toLocaleString()} / 150
+                      {accountError ? '0 / 150' : `${dailyCredits.toLocaleString()} / 150`}
                     </div>
                   </div>
 
@@ -100,7 +106,7 @@ function ConsoleTopHeader({ onOpenMobileNav }: { onOpenMobileNav: () => void }) 
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-gray-900">Vault</div>
                     <div className="text-sm font-semibold tabular-nums text-gray-900">
-                      {vaultCredits.toLocaleString()} Credits
+                      {accountError ? '0 Credits' : `${vaultCredits.toLocaleString()} Credits`}
                     </div>
                   </div>
 

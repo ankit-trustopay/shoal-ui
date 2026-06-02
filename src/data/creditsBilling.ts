@@ -64,12 +64,11 @@ export const saasPlans: SaasPlan[] = [
     price: '$249',
     period: '/ mo',
     icon: CrownIcon,
-    tagline: 'Maximum scale, API access, and support',
+    tagline: 'Maximum scale and dedicated support',
     maxAgentsPerTask: 10000,
     creditAllowance: '75,000 Monthly Vault Credits',
     features: [
       '75,000 Monthly Vault Credits',
-      'API Access',
       'Dedicated Manager',
     ],
     highlight: 'enterprise',

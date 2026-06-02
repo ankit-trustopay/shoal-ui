@@ -56,7 +56,7 @@ export function PricingTierCards({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
+      <div className="flex flex-col items-stretch gap-6 md:flex-row md:flex-wrap md:justify-center">
         {billingTiers.map((tier) => {
           const Icon = tier.icon;
           const isCurrent = tier.id === currentPlanId;
@@ -69,7 +69,7 @@ export function PricingTierCards({
               whileHover={{ y: -4 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className={cn(
-                'relative flex flex-col rounded-2xl p-5 md:p-6 transition-shadow',
+                'relative flex w-full flex-col rounded-2xl p-5 md:p-6 transition-shadow md:w-[22rem]',
                 tierCardClass(tier, isCurrent),
               )}
             >

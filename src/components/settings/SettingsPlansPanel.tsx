@@ -49,7 +49,7 @@ export function SettingsPlansPanel() {
         Upgrade when you need more virtual humans per task or monthly credits.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="flex flex-col items-stretch gap-6 md:flex-row md:flex-wrap md:justify-center">
         {settingsPlans.map((tier) => (
           <PlanCard key={tier.id} plan={tier} currentPlanId={planId} />
         ))}
@@ -78,7 +78,7 @@ function PlanCard({
   return (
     <BentoCard
       className={cn(
-        'p-5 flex flex-col relative',
+        'p-5 flex w-full flex-col relative md:w-[22rem]',
         isCurrent && '!border-2 !border-axiom',
         !isCurrent && plan.highlight === 'popular' && 'border-orange-200',
       )}
