@@ -27,7 +27,7 @@ function DebateLoadError({ message }: { message: string }) {
 
 export function Debate() {
   const { debateId } = useParams();
-  const { debate, loading, error } = useDebatePolling(debateId ?? null);
+  const { debate, loading, error, isPolling } = useDebatePolling(debateId ?? null);
 
   const sessionCode = useMemo(() => {
     if (!debateId) return 'DBT_UNKNOWN';
@@ -97,6 +97,10 @@ export function Debate() {
         frictionMatrix: debate?.frictionMatrix,
         preMortem: debate?.preMortem,
         executionRoadmap: debate?.executionRoadmap,
+        executiveSummary: debate?.executiveSummary,
+        boardroomSummary: debate?.boardroomSummary,
+        debateRoom: debate?.debateRoom,
+        evidenceVault: debate?.evidenceVault,
         evidence: debate?.evidence,
         runtimeSec: debate?.runtime ?? null,
         agentCount: debate?.agentCount ?? null,
@@ -111,6 +115,10 @@ export function Debate() {
       debate?.frictionMatrix,
       debate?.preMortem,
       debate?.executionRoadmap,
+      debate?.executiveSummary,
+      debate?.boardroomSummary,
+      debate?.debateRoom,
+      debate?.evidenceVault,
       debate?.evidence,
       debate?.runtime,
       debate?.agentCount,
@@ -134,6 +142,7 @@ export function Debate() {
       phase,
       apiStatus: debate?.status,
       loading,
+      isPolling,
       verdictLen: verdict.length,
       isAiError: isAiModelErrorVerdict(verdict),
     });
@@ -161,6 +170,7 @@ export function Debate() {
         sessionCode={sessionCode}
         premise={debate?.premise ?? null}
         agentCount={debate?.agentCount ?? null}
+        isPolling={isPolling || loading}
       />
     );
   }
@@ -194,6 +204,7 @@ export function Debate() {
       sessionCode={sessionCode}
       premise={debate?.premise ?? null}
       agentCount={debate?.agentCount ?? null}
+      isPolling={isPolling || loading}
     />
   );
 }

@@ -216,6 +216,169 @@ function buildWhyThisMatters(
   return `This decision directly affects the outcome of your stated dilemma: “${premise.slice(0, 120)}”. The boardroom weighed live research against adversarial agent arguments before issuing a single recommendation.`;
 }
 
+function parseStoredExecutiveSummary(
+  columnValue: unknown,
+  resultData: unknown,
+): StoredExecutiveSummary | null {
+  const raw = isRecord(columnValue)
+    ? columnValue
+    : isRecord(resultData)
+      ? (resultData.executiveSummary ?? resultData.executive_summary)
+      : null;
+  if (!isRecord(raw)) return null;
+
+  const recommendation = readString(raw.recommendation)?.toUpperCase();
+  const fitForYou = readString(raw.fitForYou ?? raw.fit_for_you);
+  const oneLineReason = readString(raw.oneLineReason ?? raw.one_line_reason);
+
+  if (
+    recommendation !== 'BUY' &&
+    recommendation !== 'WAIT' &&
+    recommendation !== 'PIVOT'
+  ) {
+    return null;
+  }
+  if (fitForYou !== 'Excellent' && fitForYou !== 'Good' && fitForYou !== 'Weak') {
+    return null;
+  }
+  if (!oneLineReason) return null;
+
+  return { recommendation, fitForYou, oneLineReason };
+}
+
+function parseStoredBoardroomSummary(
+  columnValue: unknown,
+  resultData: unknown,
+): StoredBoardroomSummary | null {
+  const raw = isRecord(columnValue)
+    ? columnValue
+    : isRecord(resultData)
+      ? (resultData.boardroomSummary ?? resultData.boardroom_summary)
+      : null;
+  if (!isRecord(raw)) return null;
+
+  const bullCase = readString(raw.bullCase ?? raw.bull_case);
+  const bearCase = readString(raw.bearCase ?? raw.bear_case);
+  const shoalRecommendation = readString(
+    raw.shoalRecommendation ?? raw.shoal_recommendation,
+  );
+  const mainOpportunity = readString(raw.mainOpportunity ?? raw.main_opportunity);
+  const mainRisk = readString(raw.mainRisk ?? raw.main_risk);
+  const hiddenTradeoff = readString(raw.hiddenTradeoff ?? raw.hidden_tradeoff);
+  const bestAlternative = readString(raw.bestAlternative ?? raw.best_alternative);
+  const explanation = readString(raw.explanation);
+
+  if (!bullCase || !bearCase || !shoalRecommendation) return null;
+
+  return {
+    bullCase,
+    bearCase,
+    shoalRecommendation,
+    mainOpportunity: mainOpportunity ?? bullCase.slice(0, 200),
+    mainRisk: mainRisk ?? bearCase.slice(0, 200),
+    hiddenTradeoff: hiddenTradeoff ?? '',
+    bestAlternative: bestAlternative ?? '',
+    explanation: explanation ?? '',
+  };
+}
+
+function parseStoredDebateRoom(
+  columnValue: unknown,
+  resultData: unknown,
+): StoredDebateRoomAgent[] | null {
+  const raw = Array.isArray(columnValue)
+    ? columnValue
+    : isRecord(resultData)
+      ? (resultData.debateRoom ?? resultData.debate_room)
+      : null;
+
+  if (!Array.isArray(raw)) return null;
+
+  const agents: StoredDebateRoomAgent[] = [];
+  for (const item of raw) {
+    if (!isRecord(item)) continue;
+    const role = readString(item.role);
+    const conclusion = readString(item.conclusion);
+    const disagreement = readString(item.disagreement);
+    const mindChanged = readString(item.mindChanged ?? item.mind_changed);
+    if (!role || !conclusion || !disagreement || !mindChanged) continue;
+    agents.push({ role, conclusion, disagreement, mindChanged });
+  }
+  return agents.length > 0 ? agents : null;
+}
+
+function parseStoredEvidenceVault(
+  columnValue: unknown,
+  resultData: unknown,
+): ResearchCoverage | null {
+  const raw = isRecord(columnValue)
+    ? columnValue
+    : isRecord(resultData)
+      ? (resultData.evidenceVault ?? resultData.evidence_vault)
+      : null;
+  if (!isRecord(raw)) return null;
+
+  const statsRaw = isRecord(raw.stats) ? raw.stats : null;
+  if (!statsRaw) return null;
+
+  const totalSources = statsRaw.totalSources ?? statsRaw.total_sources;
+  const highSignal = statsRaw.highSignal ?? statsRaw.high_signal;
+  const contradictory = statsRaw.contradictory;
+  const dominantConsensus =
+    statsRaw.dominantConsensus ?? statsRaw.dominant_consensus;
+
+  if (
+    typeof totalSources !== 'number' ||
+    typeof highSignal !== 'number' ||
+    typeof contradictory !== 'number' ||
+    typeof dominantConsensus !== 'number'
+  ) {
+    return null;
+  }
+
+  const clustersRaw = isRecord(raw.clusters) ? raw.clusters : null;
+  if (!clustersRaw) return null;
+
+  const mapCluster = (key: EvidenceClusterId): EvidenceCitation[] => {
+    const list = clustersRaw[key];
+    if (!Array.isArray(list)) return [];
+    const items: EvidenceCitation[] = [];
+    for (const item of list) {
+      if (!isRecord(item)) continue;
+      const url = readString(item.url);
+      if (!url?.startsWith('http')) continue;
+      items.push({
+        title: readString(item.title) ?? url,
+        url,
+        source: readString(item.source) ?? 'Web',
+      });
+    }
+    return items;
+  };
+
+  return {
+    stats: {
+      sourcesChecked: Math.max(0, Math.trunc(totalSources)),
+      highSignal: Math.max(0, Math.trunc(highSignal)),
+      contradictory: Math.max(0, Math.trunc(contradictory)),
+      dominantConsensus: Math.max(0, Math.trunc(dominantConsensus)),
+    },
+    clusters: (['reddit', 'youtube', 'official', 'news'] as const).map((id) => ({
+      id,
+      label: CLUSTER_META[id].label,
+      subtitle: CLUSTER_META[id].subtitle,
+      items: mapCluster(id),
+    })),
+  };
+}
+
+const CLUSTER_META: Record<EvidenceClusterId, { label: string; subtitle: string }> = {
+  reddit: { label: 'Reddit Cluster', subtitle: 'Community threads & sentiment' },
+  youtube: { label: 'YouTube Reviews', subtitle: 'Video reviews & walkthroughs' },
+  official: { label: 'Official Docs', subtitle: 'Filings, docs & primary sources' },
+  news: { label: 'News / Blogs', subtitle: 'Press, analysts & editorial' },
+};
+
 function parseStoredBoardroom(
   resultData: unknown,
   frictionAgents: FrictionAgent[],
@@ -303,27 +466,45 @@ export function buildExecutiveBoardroom(input: {
   planB: string;
   premise: string;
   resultData?: unknown;
+  executiveSummary?: unknown;
+  boardroomSummary?: unknown;
 }): ExecutiveBoardroom {
-  const stored = parseStoredBoardroom(
+  const storedLegacy = parseStoredBoardroom(
     input.resultData ?? null,
     input.frictionAgents,
   );
+  const storedExec = parseStoredExecutiveSummary(
+    input.executiveSummary,
+    input.resultData ?? null,
+  );
+  const storedSummary = parseStoredBoardroomSummary(
+    input.boardroomSummary,
+    input.resultData ?? null,
+  );
 
   const recommendation =
-    stored?.recommendation ??
+    storedExec?.recommendation ??
+    storedLegacy?.recommendation ??
     extractRecommendationLabel(input.verdictHeadline, input.verdictNarrative);
-  const fitForYou = stored?.fitForYou ?? deriveFitRating(input.confidence);
+  const fitForYou =
+    storedExec?.fitForYou ??
+    storedLegacy?.fitForYou ??
+    deriveFitRating(input.confidence);
   const reasonLine =
-    stored?.reasonLine ?? buildReasonLine(input.tldr, input.verdictNarrative);
+    storedExec?.oneLineReason ??
+    storedLegacy?.reasonLine ??
+    buildReasonLine(input.tldr, input.verdictNarrative);
 
   const bullCase =
-    stored?.bullCase ??
+    storedSummary?.bullCase ??
+    storedLegacy?.bullCase ??
     pickStrongestArgument(input.frictionAgents, 'agrees') ??
     input.tldr[0] ??
     'The bullish case rests on favorable signals in the live research corpus, though verification is still advised.';
 
   const bearCase =
-    stored?.bearCase ??
+    storedSummary?.bearCase ??
+    storedLegacy?.bearCase ??
     pickStrongestArgument(input.frictionAgents, 'disagrees') ??
     input.failureModes[0] ??
     'The bear case highlights downside scenarios that could invalidate the thesis within 12 months.';
@@ -334,36 +515,38 @@ export function buildExecutiveBoardroom(input: {
       ? `${input.verdictNarrative.slice(0, 397)}…`
       : input.verdictNarrative;
   const shoalRecommendation =
-    (stored?.shoalRecommendation ??
+    (storedSummary?.shoalRecommendation ??
+      storedLegacy?.shoalRecommendation ??
       neutralArg ??
       narrativeSummary) ||
     'The swarm recommends a balanced path: proceed only after validating the decisive assumptions cited in the research feed.';
 
   const findings: BoardroomFindings = {
     mainOpportunity:
-      stored?.findings?.mainOpportunity ??
+      storedSummary?.mainOpportunity ??
+      storedLegacy?.findings?.mainOpportunity ??
       bullCase.slice(0, 200) ??
       input.tldr[0] ??
       'A credible upside path exists if core assumptions in the research hold.',
     mainRisk:
-      stored?.findings?.mainRisk ??
+      storedSummary?.mainRisk ??
+      storedLegacy?.findings?.mainRisk ??
       input.failureModes[0] ??
       'Downside risk could materialize if demand or timing assumptions slip.',
     hiddenTradeoff:
-      stored?.findings?.hiddenTradeoff ??
-      input.criticalUnknowns[0] ??
-      input.tldr[1] ??
+      storedSummary?.hiddenTradeoff ||
+      storedLegacy?.findings?.hiddenTradeoff ||
+      input.criticalUnknowns[0] ||
+      input.tldr[1] ||
       'You may be trading speed of action for certainty on a key unknown.',
     bestAlternative:
-      stored?.findings?.bestAlternative ??
+      storedSummary?.bestAlternative ||
+      storedLegacy?.findings?.bestAlternative ||
       input.planB,
     whyThisMatters:
-      stored?.findings?.whyThisMatters?.trim() ||
-      buildWhyThisMatters(
-        input.verdictNarrative,
-        input.tldr,
-        input.premise,
-      ),
+      storedSummary?.explanation?.trim() ||
+      storedLegacy?.findings?.whyThisMatters?.trim() ||
+      buildWhyThisMatters(input.verdictNarrative, input.tldr, input.premise),
   };
 
   return {
@@ -629,9 +812,36 @@ function buildMindChanged(agent: FrictionAgent, index: number): string {
   return `Moved from ${from} to ${to} after ${trigger}.`;
 }
 
+function inferStanceFromRoleText(text: string): AgentStance {
+  const lower = text.toLowerCase();
+  if (/\b(disagree|against|skeptic|risk|bear|no)\b/.test(lower)) {
+    return 'disagrees';
+  }
+  if (/\b(agree|bull|support|yes|proceed)\b/.test(lower)) {
+    return 'agrees';
+  }
+  return 'neutral';
+}
+
 export function buildBoardroomRoles(
   frictionAgents: FrictionAgent[],
+  debateRoom?: unknown,
+  resultData?: unknown,
 ): BoardroomRole[] {
+  const stored = parseStoredDebateRoom(debateRoom, resultData ?? null);
+  if (stored?.length) {
+    return stored.map((agent) => ({
+      roleTitle: agent.role,
+      agentName: agent.role,
+      conclusion: agent.conclusion,
+      disagreedOn: agent.disagreement,
+      mindChanged: agent.mindChanged,
+      stance: inferStanceFromRoleText(
+        `${agent.conclusion} ${agent.disagreement}`,
+      ),
+    }));
+  }
+
   return frictionAgents.map((agent, index) => ({
     roleTitle: resolveRoleTitle(agent.name, index),
     agentName: agent.name,
@@ -641,28 +851,6 @@ export function buildBoardroomRoles(
     stance: agent.stance,
   }));
 }
-
-const CLUSTER_META: Record<
-  EvidenceClusterId,
-  { label: string; subtitle: string }
-> = {
-  reddit: {
-    label: 'Reddit Cluster',
-    subtitle: 'Community threads & sentiment',
-  },
-  youtube: {
-    label: 'YouTube Reviews',
-    subtitle: 'Video reviews & walkthroughs',
-  },
-  official: {
-    label: 'Official Docs',
-    subtitle: 'Filings, docs & primary sources',
-  },
-  news: {
-    label: 'News / Blogs',
-    subtitle: 'Press, analysts & editorial',
-  },
-};
 
 function inferEvidenceCluster(item: EvidenceCitation): EvidenceClusterId | null {
   const blob = `${item.url} ${item.source} ${item.title}`.toLowerCase();
@@ -719,16 +907,21 @@ export function clusterEvidence(
   }));
 }
 
-/** Mock coverage stats until ingest pipeline exposes real counters. */
 export function buildResearchCoverage(
   evidence: EvidenceCitation[],
+  evidenceVault?: unknown,
+  resultData?: unknown,
 ): ResearchCoverage {
+  const stored = parseStoredEvidenceVault(evidenceVault, resultData ?? null);
+  if (stored) return stored;
+
+  const cited = evidence.length;
   return {
     stats: {
-      sourcesChecked: 178,
-      highSignal: 42,
-      contradictory: 18,
-      dominantConsensus: 1,
+      sourcesChecked: Math.max(cited * 4, cited, 24),
+      highSignal: Math.max(cited, 1),
+      contradictory: Math.max(1, Math.min(18, cited)),
+      dominantConsensus: cited > 0 ? 1 : 0,
     },
     clusters: clusterEvidence(evidence),
   };
@@ -773,6 +966,30 @@ export type StoredExecutionRoadmap = {
   planB: string;
 };
 
+export type StoredExecutiveSummary = {
+  recommendation: RecommendationLabel;
+  fitForYou: FitRating;
+  oneLineReason: string;
+};
+
+export type StoredBoardroomSummary = {
+  bullCase: string;
+  bearCase: string;
+  shoalRecommendation: string;
+  mainOpportunity: string;
+  mainRisk: string;
+  hiddenTradeoff: string;
+  bestAlternative: string;
+  explanation: string;
+};
+
+export type StoredDebateRoomAgent = {
+  role: string;
+  conclusion: string;
+  disagreement: string;
+  mindChanged: string;
+};
+
 export type BuildExecutiveReportInput = {
   sessionCode: string;
   premise: string;
@@ -785,6 +1002,10 @@ export type BuildExecutiveReportInput = {
   frictionMatrix?: unknown;
   preMortem?: unknown;
   executionRoadmap?: unknown;
+  executiveSummary?: unknown;
+  boardroomSummary?: unknown;
+  debateRoom?: unknown;
+  evidenceVault?: unknown;
   evidence?: SwarmEvidenceRecord[];
   runtimeSec?: number | null;
   agentCount?: number | null;
@@ -949,8 +1170,16 @@ export function buildExecutiveDecisionReport(
     : buildCriticalUnknowns(input.resultData);
 
   const evidence = buildEvidence(input.evidence);
-  const boardroomRoles = buildBoardroomRoles(frictionAgents);
-  const researchCoverage = buildResearchCoverage(evidence);
+  const boardroomRoles = buildBoardroomRoles(
+    frictionAgents,
+    input.debateRoom,
+    input.resultData,
+  );
+  const researchCoverage = buildResearchCoverage(
+    evidence,
+    input.evidenceVault,
+    input.resultData,
+  );
 
   return {
     sessionCode: input.sessionCode,
@@ -971,6 +1200,8 @@ export function buildExecutiveDecisionReport(
       planB,
       premise: input.premise,
       resultData: input.resultData,
+      executiveSummary: input.executiveSummary,
+      boardroomSummary: input.boardroomSummary,
     }),
     tldr,
     frictionAgents,

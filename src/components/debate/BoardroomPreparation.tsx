@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Radio } from 'lucide-react';
+import {
+  computeBoardroomCountdownSeconds,
+  formatBoardroomCountdown,
+} from '../../lib/boardroomCountdown';
 import { MonoLabel } from '../ui/MonoLabel';
-
-const START_SECONDS = 4 * 60 + 30;
 
 const RESEARCH_FEED = [
   'Spawning Virtual Human personas...',
@@ -13,14 +15,7 @@ const RESEARCH_FEED = [
   'CEO Synthesizer compiling boardroom report...',
 ] as const;
 
-function formatCountdown(totalSeconds: number): string {
-  const clamped = Math.max(0, Math.floor(totalSeconds));
-  const minutes = Math.floor(clamped / 60);
-  const seconds = clamped % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
-function nextCountdownSeconds(prev: number): number {
+function nextCountdownSeconds(prev: number, maxSeconds: number): number {
   if (prev <= 0) return 0;
 
   let next = prev - 1;
@@ -31,30 +26,57 @@ function nextCountdownSeconds(prev: number): number {
     next = prev + sign * magnitude;
   }
 
-  return Math.max(0, Math.min(START_SECONDS + 45, next));
+  return Math.max(0, Math.min(maxSeconds + 45, next));
 }
+
+const FINALIZING_LABELS = [
+  'Finalizing Synthesis...',
+  'Awaiting Final Report...',
+] as const;
 
 export interface BoardroomPreparationProps {
   sessionCode?: string;
   premise?: string | null;
   agentCount?: number | null;
+  /** True while the client is polling the API for COMPLETED/FAILED. */
+  isPolling?: boolean;
 }
 
 export function BoardroomPreparation({
   sessionCode = 'DBT_PENDING',
   premise,
   agentCount,
+  isPolling = true,
 }: BoardroomPreparationProps) {
-  const [secondsLeft, setSecondsLeft] = useState(START_SECONDS);
+  const startSeconds = useMemo(
+    () => computeBoardroomCountdownSeconds(agentCount),
+    [agentCount],
+  );
+  const [secondsLeft, setSecondsLeft] = useState(startSeconds);
   const [feedIndex, setFeedIndex] = useState(0);
   const [feedHistory, setFeedHistory] = useState<string[]>([RESEARCH_FEED[0]]);
+  const [finalizingIndex, setFinalizingIndex] = useState(0);
+
+  const isFinalizing = secondsLeft <= 0;
+
+  useEffect(() => {
+    setSecondsLeft(startSeconds);
+  }, [startSeconds]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setSecondsLeft((prev) => nextCountdownSeconds(prev));
+      setSecondsLeft((prev) => nextCountdownSeconds(prev, startSeconds));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [startSeconds]);
+
+  useEffect(() => {
+    if (!isFinalizing) return;
+    const timer = window.setInterval(() => {
+      setFinalizingIndex((i) => (i + 1) % FINALIZING_LABELS.length);
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [isFinalizing]);
 
   useEffect(() => {
     let timeoutId = 0;
@@ -79,7 +101,13 @@ export function BoardroomPreparation({
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  const activeFeed = RESEARCH_FEED[feedIndex];
+  const activeFeed = isFinalizing
+    ? 'CEO Synthesizer packaging the 7-zone executive report...'
+    : RESEARCH_FEED[feedIndex];
+
+  const timerDisplay = isFinalizing
+    ? FINALIZING_LABELS[finalizingIndex]
+    : formatBoardroomCountdown(secondsLeft);
 
   return (
     <div
@@ -147,14 +175,23 @@ export function BoardroomPreparation({
               Estimated completion
             </p>
             <p
-              className="mt-3 font-mono text-6xl font-bold tabular-nums tracking-tight text-cyan-300 sm:text-7xl"
-              aria-label={`Estimated time remaining ${formatCountdown(secondsLeft)}`}
+              className={`mt-3 font-bold tracking-tight text-cyan-300 ${
+                isFinalizing
+                  ? 'text-2xl leading-snug sm:text-3xl'
+                  : 'font-mono text-6xl tabular-nums sm:text-7xl'
+              }`}
+              aria-label={
+                isFinalizing
+                  ? timerDisplay
+                  : `Estimated time remaining ${timerDisplay}`
+              }
             >
-              {formatCountdown(secondsLeft)}
+              {timerDisplay}
             </p>
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              Timer adjusts as Tavily research and agent deliberation progress —
-              similar to a live transfer ETA.
+              {isFinalizing
+                ? 'Research and agent debate are complete. Shoal is writing your boardroom report — this page will refresh automatically.'
+                : 'Timer scales with agent count and adjusts as Tavily research progresses — similar to a live transfer ETA.'}
             </p>
           </div>
 
@@ -197,7 +234,9 @@ export function BoardroomPreparation({
         <div className="mt-10 flex items-center gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
           <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-slate-600">
-            Awaiting webhook · deepseek/deepseek-chat
+            {isPolling
+              ? 'Checking database every 3s · deepseek/deepseek-chat'
+              : 'Connecting · deepseek/deepseek-chat'}
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
         </div>

@@ -172,6 +172,10 @@ export interface SwarmRecord {
   frictionMatrix?: unknown;
   preMortem?: unknown;
   executionRoadmap?: unknown;
+  executiveSummary?: unknown;
+  boardroomSummary?: unknown;
+  debateRoom?: unknown;
+  evidenceVault?: unknown;
   createdAt: string;
   messages?: SwarmMessageRecord[];
   evidence?: SwarmEvidenceRecord[];
