@@ -96,14 +96,11 @@ export function NewSwarm() {
   const [linkInputOpen, setLinkInputOpen] = useState(false);
   const [linkValue, setLinkValue] = useState('');
   const [attachedLinks, setAttachedLinks] = useState<string[]>([]);
-  const [modelMix, setModelMix] = useState(0); // 0..100 (% Plus)
   const activePlan = plans.find((p) => p.id === planId) ?? plans[0] ?? null;
   const ActiveIcon = activePlan?.icon ?? ZapIcon;
   const activePlanName = activePlan?.name ?? 'Free';
   const maxAgents = PLAN_AGENT_MAX[userPlanId] ?? PLAN_AGENT_MAX.free;
-  const plusAgents = Math.round((agentCount * modelMix) / 100);
-  const liteAgents = Math.max(0, agentCount - plusAgents);
-  const estimatedCost = liteAgents * 1 + plusAgents * 5;
+  const estimatedCost = Math.max(1, agentCount);
   const insufficientCredits = estimatedCost > credits;
   const canIgnite =
     prompt.trim().length > 0 && !isIgniting && !insufficientCredits;
@@ -143,15 +140,11 @@ export function NewSwarm() {
     setIgniteError(null);
 
     try {
-      // We currently persist one modelTier field; with model mix, treat any plus %
-      // as a "plus" run for backend routing until mix is fully modeled server-side.
-      const modelTier = modelMix > 0 ? 'plus' : 'lite';
-
       const { debateId } = await createDebate({
         query,
         agentCount,
-        modelTier,
-        modelMix,
+        modelTier: 'lite',
+        modelMix: 0,
         advancedVariables: {},
       });
       await refresh();
@@ -166,7 +159,6 @@ export function NewSwarm() {
   }, [
     prompt,
     agentCount,
-    modelMix,
     credits,
     estimatedCost,
     isIgniting,
@@ -273,37 +265,13 @@ export function NewSwarm() {
               className="w-full h-1.5 cursor-pointer disabled:opacity-50 accent-axiom"
             />
             <p className="mt-2 text-xs text-gray-500">
-              Up to {maxAgents.toLocaleString()} agents on {activePlan.name} ·{' '}
-              {credits.toLocaleString()} credits available
+              Up to {maxAgents.toLocaleString()} agents on {activePlanName} ·{' '}
+              {credits.toLocaleString()} credits available ·{' '}
+              <span className="font-semibold tabular-nums text-gray-700">
+                {estimatedCost.toLocaleString()} credits
+              </span>{' '}
+              for this swarm (1 per agent)
             </p>
-
-            <div className="mt-4">
-              <div className="flex items-center justify-between gap-4 mb-2">
-                <label className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-700">
-                  Model mix
-                </label>
-                <span className="font-mono text-xs font-semibold tabular-nums text-gray-700">
-                  {100 - modelMix}% Lite · {modelMix}% Plus
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={1}
-                value={modelMix}
-                onChange={(e) => setModelMix(Number(e.target.value))}
-                disabled={isIgniting}
-                className="w-full h-1.5 cursor-pointer disabled:opacity-50 accent-orange-500"
-              />
-              <p className="mt-2 text-xs text-gray-700">
-                Cost = ({liteAgents.toLocaleString()} Lite × 1) + ({plusAgents.toLocaleString()} Plus × 5) ={' '}
-                <span className="font-semibold tabular-nums">
-                  {estimatedCost.toLocaleString()}
-                </span>{' '}
-                Credits.
-              </p>
-            </div>
             {insufficientCredits && (
               <p className="mt-2 text-xs font-medium text-red-600">
                 This swarm costs {estimatedCost.toLocaleString()} credits — you have{' '}
@@ -596,8 +564,8 @@ export function NewSwarm() {
         </div>
 
         <p className="text-center mt-10 text-xs text-gray-500 font-mono tracking-wide">
-          ⌘ + Enter to ignite. Swarm size and cost auto-scale with task
-          complexity.
+          ⌘ + Enter to ignite. Set your dilemma and agent count — the boardroom
+          handles the rest.
         </p>
       </div>
     </div>);

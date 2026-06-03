@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { PageContainer } from '../components/ui/PageContainer';
 import { DebateResultsDashboard } from '../components/debate/DebateResultsDashboard';
-import { LiveSimulationDashboard } from '../components/swarm/live-console/LiveSimulationDashboard';
+import { BoardroomPreparation } from '../components/debate/BoardroomPreparation';
 import { SwarmDeliberationFailed } from '../components/swarm/live-console/SwarmDeliberationFailed';
 import { buildExecutiveDecisionReport } from '../lib/executiveDecisionReport';
 import {
@@ -155,16 +155,13 @@ export function Debate() {
     );
   }
 
-  if (phase === 'in_progress') {
+  if (phase === 'in_progress' || phase === 'loading') {
     return (
-      <PageContainer width="full" className="py-8">
-        <div className="mx-auto w-full max-w-6xl">
-          <LiveSimulationDashboard
-            sessionCode={sessionCode}
-            premise={debate?.premise ?? null}
-          />
-        </div>
-      </PageContainer>
+      <BoardroomPreparation
+        sessionCode={sessionCode}
+        premise={debate?.premise ?? null}
+        agentCount={debate?.agentCount ?? null}
+      />
     );
   }
 
@@ -193,10 +190,10 @@ export function Debate() {
   }
 
   return (
-    <PageContainer width="full" className="py-8">
-      <div className="mx-auto w-full max-w-6xl rounded-2xl border border-gray-200 bg-gray-50 px-6 py-16 text-center">
-        <p className="text-sm font-medium text-gray-600">Loading debate…</p>
-      </div>
-    </PageContainer>
+    <BoardroomPreparation
+      sessionCode={sessionCode}
+      premise={debate?.premise ?? null}
+      agentCount={debate?.agentCount ?? null}
+    />
   );
 }
