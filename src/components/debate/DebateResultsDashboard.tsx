@@ -10,7 +10,11 @@ import {
   Target,
 } from 'lucide-react';
 import { AI_MODEL_ERROR_VERDICT } from '../../lib/debateResult';
-import type { ExecutiveDecisionReport } from '../../lib/executiveDecisionReport';
+import type {
+  ExecutiveDecisionReport,
+  FitRating,
+  RecommendationLabel,
+} from '../../lib/executiveDecisionReport';
 import { STANCE_LABEL } from '../../lib/executiveDecisionReport';
 import type { AgentStance } from '../../lib/executiveDecisionReport';
 import { MonoLabel } from '../ui/MonoLabel';
@@ -34,36 +38,81 @@ function formatDate(iso: string | null | undefined): string | null {
   });
 }
 
-function ConfidenceRing({ value }: { value: number }) {
-  const radius = 54;
+const RECOMMENDATION_STYLES: Record<
+  RecommendationLabel,
+  { text: string; ring: string; bg: string }
+> = {
+  BUY: {
+    text: 'text-emerald-700',
+    ring: '#059669',
+    bg: 'bg-emerald-50 border-emerald-200',
+  },
+  WAIT: {
+    text: 'text-amber-800',
+    ring: '#d97706',
+    bg: 'bg-amber-50 border-amber-200',
+  },
+  PIVOT: {
+    text: 'text-orange-800',
+    ring: '#ea580c',
+    bg: 'bg-orange-50 border-orange-200',
+  },
+};
+
+const FIT_STYLES: Record<FitRating, string> = {
+  Excellent: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+  Good: 'text-blue-800 bg-blue-50 border-blue-200',
+  Weak: 'text-gray-700 bg-gray-100 border-gray-200',
+};
+
+function ConfidenceRing({
+  value,
+  size = 'hero',
+  strokeColor = '#2563eb',
+}: {
+  value: number;
+  size?: 'hero' | 'default';
+  strokeColor?: string;
+}) {
+  const radius = size === 'hero' ? 62 : 54;
+  const dim = size === 'hero' ? 160 : 144;
+  const center = dim / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
 
   return (
-    <div className="relative flex h-36 w-36 shrink-0 items-center justify-center">
-      <svg width="144" height="144" className="-rotate-90" aria-hidden>
+    <div
+      className={`relative flex shrink-0 items-center justify-center ${
+        size === 'hero' ? 'h-40 w-40' : 'h-36 w-36'
+      }`}
+    >
+      <svg width={dim} height={dim} className="-rotate-90" aria-hidden>
         <circle
-          cx="72"
-          cy="72"
+          cx={center}
+          cy={center}
           r={radius}
           fill="none"
           stroke="#e5e7eb"
-          strokeWidth="6"
+          strokeWidth={size === 'hero' ? 7 : 6}
         />
         <circle
-          cx="72"
-          cy="72"
+          cx={center}
+          cy={center}
           r={radius}
           fill="none"
-          stroke="#2563eb"
-          strokeWidth="6"
+          stroke={strokeColor}
+          strokeWidth={size === 'hero' ? 7 : 6}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-gray-900 tabular-nums tracking-tight">
+        <span
+          className={`font-bold text-gray-900 tabular-nums tracking-tight ${
+            size === 'hero' ? 'text-4xl' : 'text-3xl'
+          }`}
+        >
           {value}%
         </span>
         <span className="mt-0.5 text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">
@@ -220,29 +269,50 @@ function WhatIfSandbox() {
   );
 }
 
-function VerdictHero({ report }: { report: ExecutiveDecisionReport }) {
+function ExecutiveBoardroomPanel({ report }: { report: ExecutiveDecisionReport }) {
+  const { boardroom } = report;
+  const recStyle = RECOMMENDATION_STYLES[boardroom.recommendation];
+
   return (
-    <section className="overflow-hidden rounded-xl border border-gray-200/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="border-b border-gray-100 bg-gradient-to-br from-gray-50/80 via-white to-blue-50/30 px-6 py-8 sm:px-10 sm:py-10">
-        <MonoLabel className="mb-4 block text-orange-600">
-          Executive Verdict
+    <section className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.07)]">
+      <div className="h-1 bg-gradient-to-r from-slate-800 via-slate-600 to-slate-800" aria-hidden />
+      {/* Hero */}
+      <div className="border-b border-slate-100 bg-gradient-to-br from-slate-50/90 via-white to-blue-50/20 px-6 py-8 sm:px-10 sm:py-10">
+        <MonoLabel className="mb-4 block text-slate-600">
+          Executive Boardroom
         </MonoLabel>
         <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0 flex-1">
-            <p className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-              {report.verdictHeadline}
-            </p>
-            {report.verdictNarrative && (
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg">
-                {report.verdictNarrative.length > 320
-                  ? `${report.verdictNarrative.slice(0, 317)}…`
-                  : report.verdictNarrative}
+          <div className="min-w-0 flex-1 space-y-5">
+            <div>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-gray-500">
+                Recommendation
               </p>
-            )}
+              <p
+                className={`mt-1 text-5xl font-bold tracking-tight sm:text-6xl ${recStyle.text}`}
+              >
+                {boardroom.recommendation}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                Fit for you
+              </span>
+              <span
+                className={`rounded-full border px-3 py-1 text-sm font-bold ${FIT_STYLES[boardroom.fitForYou]}`}
+              >
+                {boardroom.fitForYou}
+              </span>
+            </div>
+            <p className="max-w-2xl text-base leading-relaxed text-gray-700 sm:text-lg">
+              {boardroom.reasonLine}
+            </p>
           </div>
-          <ConfidenceRing value={report.confidence} />
+          <ConfidenceRing
+            value={report.confidence}
+            size="hero"
+            strokeColor={recStyle.ring}
+          />
         </div>
-
         <div className="mt-8 flex gap-2.5 rounded-lg border border-amber-100/80 bg-amber-50/40 px-4 py-3">
           <AlertTriangle
             size={15}
@@ -250,33 +320,112 @@ function VerdictHero({ report }: { report: ExecutiveDecisionReport }) {
             aria-hidden
           />
           <p className="text-xs leading-relaxed text-gray-500">
-            ⚠️ This report is synthesized from adversarial AI debate and live web
+            This report is synthesized from adversarial AI debate and live web
             research. We do not claim 100% accuracy. Always verify critical
             decisions.
           </p>
         </div>
       </div>
 
-      <div className="border-t border-gray-100 px-6 py-7 sm:px-10">
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-[0.15em] text-blue-600">
-            TL;DR
-          </span>
-          <span className="h-px flex-1 bg-gray-200" aria-hidden />
+      {/* 3-column tension board */}
+      <div className="grid grid-cols-1 border-b border-gray-100 lg:grid-cols-3">
+        <article className="border-b border-gray-100 bg-gradient-to-b from-emerald-50/70 to-white p-6 sm:p-8 lg:border-b-0 lg:border-r">
+          <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-800">
+            Why this should work
+          </h3>
+          <p className="mt-1 text-xs text-emerald-700/80">Strongest bull case</p>
+          <p className="mt-4 text-sm leading-relaxed text-gray-800 sm:text-base">
+            {boardroom.bullCase}
+          </p>
+        </article>
+        <article className="border-b border-gray-100 bg-gradient-to-b from-blue-50/50 to-white p-6 sm:p-8 lg:border-b-0 lg:border-r">
+          <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-blue-900">
+            Shoal&apos;s Recommendation
+          </h3>
+          <p className="mt-1 text-xs text-blue-800/80">Synthesized middle ground</p>
+          <p className="mt-4 text-sm leading-relaxed text-gray-800 sm:text-base">
+            {boardroom.shoalRecommendation}
+          </p>
+        </article>
+        <article className="bg-gradient-to-b from-orange-50/60 to-white p-6 sm:p-8">
+          <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-orange-900">
+            Why this could fail
+          </h3>
+          <p className="mt-1 text-xs text-orange-800/80">Strongest bear / pre-mortem</p>
+          <p className="mt-4 text-sm leading-relaxed text-gray-800 sm:text-base">
+            {boardroom.bearCase}
+          </p>
+        </article>
+      </div>
+
+      {/* Boardroom summary */}
+      <div className="px-6 py-8 sm:px-10 sm:py-9">
+        <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-gray-900">
+          Boardroom Summary
+        </h3>
+        <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <div>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+              What Shoal Found
+            </p>
+            <ul className="mt-4 space-y-4">
+              {(
+                [
+                  ['Main Opportunity', boardroom.findings.mainOpportunity],
+                  ['Main Risk', boardroom.findings.mainRisk],
+                  ['Hidden Tradeoff', boardroom.findings.hiddenTradeoff],
+                  ['Best Alternative', boardroom.findings.bestAlternative],
+                ] as const
+              ).map(([label, value]) => (
+                <li key={label} className="flex gap-3">
+                  <span
+                    className="mt-2 h-1 w-1 shrink-0 rounded-full bg-slate-400"
+                    aria-hidden
+                  />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                      {label}
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-gray-800">
+                      {value}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-6">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+              Why this matters
+            </p>
+            <p className="mt-4 text-sm leading-relaxed text-gray-700 sm:text-base">
+              {boardroom.findings.whyThisMatters}
+            </p>
+          </div>
         </div>
-        <ul className="space-y-3">
-          {report.tldr.map((bullet, i) => (
-            <li key={i} className="flex gap-3 text-sm leading-relaxed text-gray-700 sm:text-base">
-              <span
-                className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500"
-                aria-hidden
-              />
-              <span>{bullet}</span>
-            </li>
-          ))}
-        </ul>
       </div>
     </section>
+  );
+}
+
+function TldrBrief({ bullets }: { bullets: string[] }) {
+  if (bullets.length === 0) return null;
+  return (
+    <ReportSection title="Executive Brief">
+      <ul className="space-y-3">
+        {bullets.map((bullet, i) => (
+          <li
+            key={i}
+            className="flex gap-3 border-l border-slate-200 pl-4 text-sm leading-relaxed text-gray-700 sm:text-base"
+          >
+            <span className="font-mono text-xs font-bold text-slate-400">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span>{bullet}</span>
+          </li>
+        ))}
+      </ul>
+    </ReportSection>
   );
 }
 
@@ -511,16 +660,18 @@ export function DebateResultsDashboard({
 
   return (
     <div className="mx-auto w-full max-w-7xl pb-12 px-1">
-      <header className="mb-10 border-b border-gray-200 pb-8">
-        <MonoLabel className="mb-3 block text-blue-600">{statusLine}</MonoLabel>
+      <header className="mb-8 border-b border-gray-200 pb-8">
+        <MonoLabel className="mb-3 block text-slate-600">{statusLine}</MonoLabel>
         <h1 className="max-w-4xl text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
           {report.premise}
         </h1>
       </header>
 
-      <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-10">
+      <ExecutiveBoardroomPanel report={report} />
+
+      <div className="mt-10 flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-10">
         <div className="min-w-0 space-y-8 lg:flex-[7] lg:basis-0">
-          <VerdictHero report={report} />
+          <TldrBrief bullets={report.tldr} />
           <FrictionMatrix agents={report.frictionAgents} />
           <PreMortem
             failureModes={report.failureModes}

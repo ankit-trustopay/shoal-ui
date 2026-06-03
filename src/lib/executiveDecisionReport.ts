@@ -22,6 +22,28 @@ export type ReportMeta = {
   creditsConsumed: number;
 };
 
+export type RecommendationLabel = 'BUY' | 'WAIT' | 'PIVOT';
+
+export type FitRating = 'Excellent' | 'Good' | 'Weak';
+
+export type BoardroomFindings = {
+  mainOpportunity: string;
+  mainRisk: string;
+  hiddenTradeoff: string;
+  bestAlternative: string;
+  whyThisMatters: string;
+};
+
+export type ExecutiveBoardroom = {
+  recommendation: RecommendationLabel;
+  fitForYou: FitRating;
+  reasonLine: string;
+  bullCase: string;
+  shoalRecommendation: string;
+  bearCase: string;
+  findings: BoardroomFindings;
+};
+
 export type ExecutiveDecisionReport = {
   sessionCode: string;
   premise: string;
@@ -29,6 +51,7 @@ export type ExecutiveDecisionReport = {
   verdictHeadline: string;
   verdictNarrative: string;
   confidence: number;
+  boardroom: ExecutiveBoardroom;
   tldr: string[];
   frictionAgents: FrictionAgent[];
   failureModes: string[];
@@ -89,6 +112,237 @@ export function extractVerdictHeadline(verdict: string): string {
   }
 
   return 'EXECUTIVE VERDICT';
+}
+
+export function extractRecommendationLabel(
+  headline: string,
+  verdict: string,
+): RecommendationLabel {
+  const blob = `${headline} ${verdict}`.toUpperCase();
+
+  if (
+    /\b(PIVOT|RECONSIDER|DO NOT LAUNCH|DON'T LAUNCH|NO[- ]GO|AVOID|SELL|ABORT)\b/.test(
+      blob,
+    )
+  ) {
+    return 'PIVOT';
+  }
+  if (
+    /\b(WAIT|HOLD|CAUTION|PROCEED WITH CAUTION|PAUSE|DELAY|MONITOR)\b/.test(blob)
+  ) {
+    return 'WAIT';
+  }
+  if (/\b(BUY|LAUNCH|INVEST|PROCEED|GO)\b/.test(blob)) {
+    return 'BUY';
+  }
+  return 'WAIT';
+}
+
+export function deriveFitRating(confidence: number): FitRating {
+  if (confidence >= 75) return 'Excellent';
+  if (confidence >= 50) return 'Good';
+  return 'Weak';
+}
+
+function pickStrongestArgument(
+  agents: FrictionAgent[],
+  stance: AgentStance,
+): string | null {
+  const matches = agents.filter((a) => a.stance === stance);
+  if (matches.length === 0) return null;
+  return matches.reduce((best, current) =>
+    current.summary.length > best.summary.length ? current : best,
+  ).summary;
+}
+
+function buildReasonLine(tldr: string[], verdict: string): string {
+  if (tldr.length >= 2) {
+    const parts = tldr.slice(0, 3).map((s) => s.replace(/\.$/, ''));
+    return `Because ${parts.join(', ')}.`;
+  }
+  const sentence = verdict.split(/(?<=[.!?])\s+/)[0]?.trim();
+  if (sentence) {
+    return sentence.endsWith('.') ? sentence : `${sentence}.`;
+  }
+  return 'Because the swarm could not synthesize a clear causal chain from the evidence.';
+}
+
+function buildWhyThisMatters(
+  verdict: string,
+  tldr: string[],
+  premise: string,
+): string {
+  const fromTldr = tldr.slice(0, 2).join(' ');
+  if (fromTldr.length > 40) {
+    return fromTldr.length > 320 ? `${fromTldr.slice(0, 317)}…` : fromTldr;
+  }
+  const narrative = verdict.trim();
+  if (narrative.length > 40) {
+    const sentences = narrative.split(/(?<=[.!?])\s+/).filter(Boolean);
+    return sentences.slice(0, 2).join(' ') || narrative.slice(0, 280);
+  }
+  return `This decision directly affects the outcome of your stated dilemma: “${premise.slice(0, 120)}”. The boardroom weighed live research against adversarial agent arguments before issuing a single recommendation.`;
+}
+
+function parseStoredBoardroom(
+  resultData: unknown,
+  frictionAgents: FrictionAgent[],
+): Partial<ExecutiveBoardroom> | null {
+  const raw = isRecord(resultData)
+    ? (resultData.boardroom ?? resultData.executiveBoardroom)
+    : null;
+  if (!isRecord(raw)) return null;
+
+  const findingsRaw = isRecord(raw.findings) ? raw.findings : raw;
+
+  const recommendation = readString(raw.recommendation);
+  const fitForYou = readString(raw.fitForYou ?? raw.fit_for_you);
+  const reasonLine = readString(raw.reasonLine ?? raw.reason_line);
+  const bullCase =
+    readString(raw.bullCase ?? raw.bull_case) ??
+    pickStrongestArgument(frictionAgents, 'agrees');
+  const shoalRecommendation = readString(
+    raw.shoalRecommendation ?? raw.shoal_recommendation,
+  );
+  const bearCase =
+    readString(raw.bearCase ?? raw.bear_case) ??
+    pickStrongestArgument(frictionAgents, 'disagrees');
+
+  const mainOpportunity = readString(
+    findingsRaw.mainOpportunity ?? findingsRaw.main_opportunity,
+  );
+  const mainRisk = readString(findingsRaw.mainRisk ?? findingsRaw.main_risk);
+  const hiddenTradeoff = readString(
+    findingsRaw.hiddenTradeoff ?? findingsRaw.hidden_tradeoff,
+  );
+  const bestAlternative = readString(
+    findingsRaw.bestAlternative ?? findingsRaw.best_alternative,
+  );
+  const whyThisMatters = readString(
+    findingsRaw.whyThisMatters ?? findingsRaw.why_this_matters,
+  );
+
+  if (
+    !recommendation &&
+    !bullCase &&
+    !shoalRecommendation &&
+    !bearCase &&
+    !mainOpportunity
+  ) {
+    return null;
+  }
+
+  const partial: Partial<ExecutiveBoardroom> = {};
+  if (
+    recommendation === 'BUY' ||
+    recommendation === 'WAIT' ||
+    recommendation === 'PIVOT'
+  ) {
+    partial.recommendation = recommendation;
+  }
+  if (fitForYou === 'Excellent' || fitForYou === 'Good' || fitForYou === 'Weak') {
+    partial.fitForYou = fitForYou;
+  }
+  if (reasonLine) partial.reasonLine = reasonLine;
+  if (bullCase) partial.bullCase = bullCase;
+  if (shoalRecommendation) partial.shoalRecommendation = shoalRecommendation;
+  if (bearCase) partial.bearCase = bearCase;
+  if (mainOpportunity || mainRisk || hiddenTradeoff || bestAlternative) {
+    partial.findings = {
+      mainOpportunity: mainOpportunity ?? '',
+      mainRisk: mainRisk ?? '',
+      hiddenTradeoff: hiddenTradeoff ?? '',
+      bestAlternative: bestAlternative ?? '',
+      whyThisMatters: whyThisMatters ?? '',
+    };
+  }
+  return partial;
+}
+
+export function buildExecutiveBoardroom(input: {
+  verdictHeadline: string;
+  verdictNarrative: string;
+  confidence: number;
+  tldr: string[];
+  frictionAgents: FrictionAgent[];
+  failureModes: string[];
+  criticalUnknowns: string[];
+  immediateAction: string;
+  planB: string;
+  premise: string;
+  resultData?: unknown;
+}): ExecutiveBoardroom {
+  const stored = parseStoredBoardroom(
+    input.resultData ?? null,
+    input.frictionAgents,
+  );
+
+  const recommendation =
+    stored?.recommendation ??
+    extractRecommendationLabel(input.verdictHeadline, input.verdictNarrative);
+  const fitForYou = stored?.fitForYou ?? deriveFitRating(input.confidence);
+  const reasonLine =
+    stored?.reasonLine ?? buildReasonLine(input.tldr, input.verdictNarrative);
+
+  const bullCase =
+    stored?.bullCase ??
+    pickStrongestArgument(input.frictionAgents, 'agrees') ??
+    input.tldr[0] ??
+    'The bullish case rests on favorable signals in the live research corpus, though verification is still advised.';
+
+  const bearCase =
+    stored?.bearCase ??
+    pickStrongestArgument(input.frictionAgents, 'disagrees') ??
+    input.failureModes[0] ??
+    'The bear case highlights downside scenarios that could invalidate the thesis within 12 months.';
+
+  const neutralArg = pickStrongestArgument(input.frictionAgents, 'neutral');
+  const narrativeSummary =
+    input.verdictNarrative.length > 400
+      ? `${input.verdictNarrative.slice(0, 397)}…`
+      : input.verdictNarrative;
+  const shoalRecommendation =
+    (stored?.shoalRecommendation ??
+      neutralArg ??
+      narrativeSummary) ||
+    'The swarm recommends a balanced path: proceed only after validating the decisive assumptions cited in the research feed.';
+
+  const findings: BoardroomFindings = {
+    mainOpportunity:
+      stored?.findings?.mainOpportunity ??
+      bullCase.slice(0, 200) ??
+      input.tldr[0] ??
+      'A credible upside path exists if core assumptions in the research hold.',
+    mainRisk:
+      stored?.findings?.mainRisk ??
+      input.failureModes[0] ??
+      'Downside risk could materialize if demand or timing assumptions slip.',
+    hiddenTradeoff:
+      stored?.findings?.hiddenTradeoff ??
+      input.criticalUnknowns[0] ??
+      input.tldr[1] ??
+      'You may be trading speed of action for certainty on a key unknown.',
+    bestAlternative:
+      stored?.findings?.bestAlternative ??
+      input.planB,
+    whyThisMatters:
+      stored?.findings?.whyThisMatters?.trim() ||
+      buildWhyThisMatters(
+        input.verdictNarrative,
+        input.tldr,
+        input.premise,
+      ),
+  };
+
+  return {
+    recommendation,
+    fitForYou,
+    reasonLine,
+    bullCase,
+    shoalRecommendation,
+    bearCase,
+    findings,
+  };
 }
 
 function inferStance(text: string, index: number, agentName: string): AgentStance {
@@ -457,21 +711,40 @@ export function buildExecutiveDecisionReport(
       }
     : buildExecution(input.resultData, overview.recommendedActions);
 
+  const verdictHeadline = extractVerdictHeadline(verdict);
+  const confidence = Math.max(0, Math.min(100, Math.round(input.confidence)));
+  const tldr = storedTldr ?? buildTldr(verdict, input.agents, []);
+  const failureModes = storedPreMortem
+    ? storedPreMortem.failureModes
+    : buildFailureModes(input.resultData, verdict, overview.minorityDissent);
+  const criticalUnknowns = storedPreMortem
+    ? storedPreMortem.criticalUnknowns
+    : buildCriticalUnknowns(input.resultData);
+
   return {
     sessionCode: input.sessionCode,
     premise: input.premise,
     createdAt: input.createdAt,
-    verdictHeadline: extractVerdictHeadline(verdict),
+    verdictHeadline,
     verdictNarrative: verdict,
-    confidence: Math.max(0, Math.min(100, Math.round(input.confidence))),
-    tldr: storedTldr ?? buildTldr(verdict, input.agents, []),
+    confidence,
+    boardroom: buildExecutiveBoardroom({
+      verdictHeadline,
+      verdictNarrative: verdict,
+      confidence,
+      tldr,
+      frictionAgents,
+      failureModes,
+      criticalUnknowns,
+      immediateAction: immediate,
+      planB,
+      premise: input.premise,
+      resultData: input.resultData,
+    }),
+    tldr,
     frictionAgents,
-    failureModes: storedPreMortem
-      ? storedPreMortem.failureModes
-      : buildFailureModes(input.resultData, verdict, overview.minorityDissent),
-    criticalUnknowns: storedPreMortem
-      ? storedPreMortem.criticalUnknowns
-      : buildCriticalUnknowns(input.resultData),
+    failureModes,
+    criticalUnknowns,
     evidence: buildEvidence(input.evidence),
     immediateAction: immediate,
     planB: planB,
