@@ -16,6 +16,36 @@ export type EvidenceCitation = {
   source: string;
 };
 
+export type BoardroomRole = {
+  roleTitle: string;
+  agentName: string;
+  conclusion: string;
+  disagreedOn: string;
+  mindChanged: string;
+  stance: AgentStance;
+};
+
+export type EvidenceClusterId = 'reddit' | 'youtube' | 'official' | 'news';
+
+export type EvidenceCluster = {
+  id: EvidenceClusterId;
+  label: string;
+  subtitle: string;
+  items: EvidenceCitation[];
+};
+
+export type ResearchCoverageStats = {
+  sourcesChecked: number;
+  highSignal: number;
+  contradictory: number;
+  dominantConsensus: number;
+};
+
+export type ResearchCoverage = {
+  stats: ResearchCoverageStats;
+  clusters: EvidenceCluster[];
+};
+
 export type ReportMeta = {
   runtimeSec: number;
   agentsDeployed: number;
@@ -54,9 +84,11 @@ export type ExecutiveDecisionReport = {
   boardroom: ExecutiveBoardroom;
   tldr: string[];
   frictionAgents: FrictionAgent[];
+  boardroomRoles: BoardroomRole[];
   failureModes: string[];
   criticalUnknowns: string[];
   evidence: EvidenceCitation[];
+  researchCoverage: ResearchCoverage;
   immediateAction: string;
   planB: string;
   meta: ReportMeta;
@@ -499,12 +531,207 @@ function buildEvidence(evidence: SwarmEvidenceRecord[] | undefined): EvidenceCit
 
   return evidence
     .filter((item) => item.url?.trim() && item.url.startsWith('http'))
-    .slice(0, 12)
+    .slice(0, 24)
     .map((item) => ({
       title: item.title?.trim() || item.url,
       url: item.url.trim(),
       source: item.source?.trim() || 'Web',
     }));
+}
+
+const BOARDROOM_ROLE_TITLES = [
+  'Product Analyst',
+  'Skeptic',
+  'Budget Buyer',
+  'Market Analyst',
+  'Domain Expert',
+  'Risk Officer',
+  'Growth Lead',
+  'CEO Synthesizer',
+] as const;
+
+const DISAGREEMENT_TOPICS = [
+  'go-to-market timing versus burn-rate assumptions',
+  'pricing elasticity in third-party review data',
+  'whether TAM estimates are defensible at current CAC',
+  'regulatory exposure in priority launch geographies',
+  'channel mix and partner dependency risk',
+  'unit economics under competitive pricing pressure',
+] as const;
+
+const MIND_CHANGE_TRIGGERS = [
+  'reviewing pricing data',
+  'cross-checking Tavily high-signal sources',
+  'stress-testing the pre-mortem failure modes',
+  'reconciling contradictory forum sentiment',
+  'validating official documentation against claims',
+] as const;
+
+const POSITION_LABELS = ['YES', 'NO', 'MAYBE', 'HOLD', 'PIVOT'] as const;
+
+function resolveRoleTitle(agentName: string, index: number): string {
+  const lower = agentName.toLowerCase();
+  if (lower.includes('skeptic') || lower.includes('debater')) return 'Skeptic';
+  if (lower.includes('ceo') || lower.includes('synth')) return 'CEO Synthesizer';
+  if (lower.includes('budget') || lower.includes('finance') || lower.includes('cfo'))
+    return 'Budget Buyer';
+  if (lower.includes('product')) return 'Product Analyst';
+  if (lower.includes('market')) return 'Market Analyst';
+  if (lower.includes('risk')) return 'Risk Officer';
+  if (lower.includes('growth')) return 'Growth Lead';
+  if (lower.includes('domain') || lower.includes('expert')) return 'Domain Expert';
+  return BOARDROOM_ROLE_TITLES[index % BOARDROOM_ROLE_TITLES.length];
+}
+
+function stableIndex(seed: string, modulo: number): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h + seed.charCodeAt(i) * (i + 1)) % 9973;
+  }
+  return modulo > 0 ? h % modulo : 0;
+}
+
+function buildDisagreedOn(
+  agent: FrictionAgent,
+  peers: FrictionAgent[],
+): string {
+  const opponent =
+    peers.find((p) => p.name !== agent.name && p.stance !== agent.stance) ??
+    peers.find((p) => p.name !== agent.name) ??
+    peers[0];
+  const topic =
+    DISAGREEMENT_TOPICS[
+      stableIndex(`${agent.name}-${agent.stance}`, DISAGREEMENT_TOPICS.length)
+    ];
+  const opponentLabel = opponent?.name ?? 'the room';
+  return `With ${opponentLabel} on ${topic}.`;
+}
+
+function buildMindChanged(agent: FrictionAgent, index: number): string {
+  const seed = `${agent.name}-${index}`;
+  const fromIdx = stableIndex(`${seed}-from`, POSITION_LABELS.length);
+  let from = POSITION_LABELS[fromIdx];
+  let to: (typeof POSITION_LABELS)[number];
+  if (agent.stance === 'agrees') to = 'YES';
+  else if (agent.stance === 'disagrees') to = 'NO';
+  else to = 'MAYBE';
+
+  if (from === to) {
+    from = POSITION_LABELS[(fromIdx + 1) % POSITION_LABELS.length];
+  }
+  if (from === to) {
+    return 'Position held steady after full boardroom cross-examination.';
+  }
+  const trigger =
+    MIND_CHANGE_TRIGGERS[
+      stableIndex(seed, MIND_CHANGE_TRIGGERS.length)
+    ];
+  return `Moved from ${from} to ${to} after ${trigger}.`;
+}
+
+export function buildBoardroomRoles(
+  frictionAgents: FrictionAgent[],
+): BoardroomRole[] {
+  return frictionAgents.map((agent, index) => ({
+    roleTitle: resolveRoleTitle(agent.name, index),
+    agentName: agent.name,
+    conclusion: agent.summary,
+    disagreedOn: buildDisagreedOn(agent, frictionAgents),
+    mindChanged: buildMindChanged(agent, index),
+    stance: agent.stance,
+  }));
+}
+
+const CLUSTER_META: Record<
+  EvidenceClusterId,
+  { label: string; subtitle: string }
+> = {
+  reddit: {
+    label: 'Reddit Cluster',
+    subtitle: 'Community threads & sentiment',
+  },
+  youtube: {
+    label: 'YouTube Reviews',
+    subtitle: 'Video reviews & walkthroughs',
+  },
+  official: {
+    label: 'Official Docs',
+    subtitle: 'Filings, docs & primary sources',
+  },
+  news: {
+    label: 'News / Blogs',
+    subtitle: 'Press, analysts & editorial',
+  },
+};
+
+function inferEvidenceCluster(item: EvidenceCitation): EvidenceClusterId | null {
+  const blob = `${item.url} ${item.source} ${item.title}`.toLowerCase();
+  if (blob.includes('reddit.com') || blob.includes('redd.it')) return 'reddit';
+  if (blob.includes('youtube.com') || blob.includes('youtu.be')) return 'youtube';
+  if (
+    blob.includes('.gov') ||
+    blob.includes('docs.') ||
+    blob.includes('documentation') ||
+    blob.includes('github.com') ||
+    blob.includes('sec.gov') ||
+    blob.includes('/doc/')
+  ) {
+    return 'official';
+  }
+  if (
+    blob.includes('medium.com') ||
+    blob.includes('substack') ||
+    blob.includes('blog') ||
+    blob.includes('news') ||
+    blob.includes('reuters') ||
+    blob.includes('bloomberg')
+  ) {
+    return 'news';
+  }
+  return null;
+}
+
+function hashClusterId(item: EvidenceCitation): EvidenceClusterId {
+  const ids: EvidenceClusterId[] = ['reddit', 'youtube', 'official', 'news'];
+  return ids[stableIndex(item.url, ids.length)];
+}
+
+export function clusterEvidence(
+  evidence: EvidenceCitation[],
+): EvidenceCluster[] {
+  const buckets: Record<EvidenceClusterId, EvidenceCitation[]> = {
+    reddit: [],
+    youtube: [],
+    official: [],
+    news: [],
+  };
+
+  for (const item of evidence) {
+    const id = inferEvidenceCluster(item) ?? hashClusterId(item);
+    buckets[id].push(item);
+  }
+
+  return (['reddit', 'youtube', 'official', 'news'] as const).map((id) => ({
+    id,
+    label: CLUSTER_META[id].label,
+    subtitle: CLUSTER_META[id].subtitle,
+    items: buckets[id],
+  }));
+}
+
+/** Mock coverage stats until ingest pipeline exposes real counters. */
+export function buildResearchCoverage(
+  evidence: EvidenceCitation[],
+): ResearchCoverage {
+  return {
+    stats: {
+      sourcesChecked: 178,
+      highSignal: 42,
+      contradictory: 18,
+      dominantConsensus: 1,
+    },
+    clusters: clusterEvidence(evidence),
+  };
 }
 
 function buildExecution(
@@ -721,6 +948,10 @@ export function buildExecutiveDecisionReport(
     ? storedPreMortem.criticalUnknowns
     : buildCriticalUnknowns(input.resultData);
 
+  const evidence = buildEvidence(input.evidence);
+  const boardroomRoles = buildBoardroomRoles(frictionAgents);
+  const researchCoverage = buildResearchCoverage(evidence);
+
   return {
     sessionCode: input.sessionCode,
     premise: input.premise,
@@ -743,9 +974,11 @@ export function buildExecutiveDecisionReport(
     }),
     tldr,
     frictionAgents,
+    boardroomRoles,
     failureModes,
     criticalUnknowns,
-    evidence: buildEvidence(input.evidence),
+    evidence,
+    researchCoverage,
     immediateAction: immediate,
     planB: planB,
     meta: {

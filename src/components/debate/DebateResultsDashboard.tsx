@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowUpRight,
-  ExternalLink,
   RefreshCw,
   ShieldAlert,
   Sparkles,
@@ -15,9 +14,9 @@ import type {
   FitRating,
   RecommendationLabel,
 } from '../../lib/executiveDecisionReport';
-import { STANCE_LABEL } from '../../lib/executiveDecisionReport';
-import type { AgentStance } from '../../lib/executiveDecisionReport';
 import { MonoLabel } from '../ui/MonoLabel';
+import { BoardroomDebateRoom } from './BoardroomDebateRoom';
+import { ResearchEvidenceVault } from './ResearchEvidenceVault';
 
 export type { ExecutiveDecisionReport };
 
@@ -122,24 +121,6 @@ function ConfidenceRing({
     </div>
   );
 }
-
-const STANCE_STYLES: Record<
-  AgentStance,
-  { badge: string; border: string }
-> = {
-  agrees: {
-    badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    border: 'border-emerald-100',
-  },
-  disagrees: {
-    badge: 'bg-red-50 text-red-800 border-red-200',
-    border: 'border-red-100',
-  },
-  neutral: {
-    badge: 'bg-gray-100 text-gray-700 border-gray-200',
-    border: 'border-gray-200',
-  },
-};
 
 function ModelErrorState() {
   return (
@@ -429,40 +410,6 @@ function TldrBrief({ bullets }: { bullets: string[] }) {
   );
 }
 
-function FrictionMatrix({
-  agents,
-}: {
-  agents: ExecutiveDecisionReport['frictionAgents'];
-}) {
-  return (
-    <ReportSection title="Swarm Friction">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {agents.map((agent) => {
-          const styles = STANCE_STYLES[agent.stance];
-          return (
-            <article
-              key={agent.name}
-              className={`flex flex-col rounded-lg border bg-gray-50/30 p-5 ${styles.border}`}
-            >
-              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-                <h3 className="text-sm font-bold text-gray-900">{agent.name}</h3>
-                <span
-                  className={`rounded border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${styles.badge}`}
-                >
-                  [{STANCE_LABEL[agent.stance]}]
-                </span>
-              </div>
-              <p className="text-sm leading-relaxed text-gray-600">
-                {agent.summary}
-              </p>
-            </article>
-          );
-        })}
-      </div>
-    </ReportSection>
-  );
-}
-
 function PreMortem({
   failureModes,
   criticalUnknowns,
@@ -519,57 +466,6 @@ function PreMortem({
           </ul>
         </div>
       </div>
-    </ReportSection>
-  );
-}
-
-function EvidenceVault({
-  evidence,
-}: {
-  evidence: ExecutiveDecisionReport['evidence'];
-}) {
-  const validEvidence = evidence.filter(
-    (item) => item.url && item.url !== '#' && item.url.startsWith('http'),
-  );
-
-  return (
-    <ReportSection title="Verified Sources">
-      {validEvidence.length > 0 ? (
-        <ul className="divide-y divide-gray-100">
-          {validEvidence.map((item) => (
-            <li key={item.url}>
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group -mx-2 flex items-start justify-between gap-4 rounded-lg px-2 py-4 transition-colors first:pt-0 last:pb-0 hover:bg-gray-50/80"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700">
-                    {item.source}
-                  </p>
-                  <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                    {item.title}
-                  </p>
-                  <p className="mt-1 truncate font-mono text-xs text-blue-600 group-hover:underline">
-                    {item.url}
-                  </p>
-                </div>
-                <ExternalLink
-                  size={16}
-                  className="mt-1 shrink-0 text-gray-400 group-hover:text-blue-600"
-                  aria-hidden
-                />
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm leading-relaxed text-gray-500">
-          No live web sources were captured for this debate. Sources appear here
-          when Tavily research succeeds during deliberation.
-        </p>
-      )}
     </ReportSection>
   );
 }
@@ -672,12 +568,12 @@ export function DebateResultsDashboard({
       <div className="mt-10 flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-10">
         <div className="min-w-0 space-y-8 lg:flex-[7] lg:basis-0">
           <TldrBrief bullets={report.tldr} />
-          <FrictionMatrix agents={report.frictionAgents} />
+          <BoardroomDebateRoom roles={report.boardroomRoles} />
+          <ResearchEvidenceVault coverage={report.researchCoverage} />
           <PreMortem
             failureModes={report.failureModes}
             criticalUnknowns={report.criticalUnknowns}
           />
-          <EvidenceVault evidence={report.evidence} />
           <ExecutionRoadmap
             immediateAction={report.immediateAction}
             planB={report.planB}
