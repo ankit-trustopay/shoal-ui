@@ -4,6 +4,7 @@ import { PageContainer } from '../components/ui/PageContainer';
 import { DebateResultsDashboard } from '../components/debate/DebateResultsDashboard';
 import { LiveSimulationDashboard } from '../components/swarm/live-console/LiveSimulationDashboard';
 import { SwarmDeliberationFailed } from '../components/swarm/live-console/SwarmDeliberationFailed';
+import { buildExecutiveDecisionReport } from '../lib/executiveDecisionReport';
 import {
   hasMeaningfulVerdict,
   isAiModelErrorVerdict,
@@ -82,6 +83,36 @@ export function Debate() {
     result?.confidence ??
     (typeof debate?.confidence === 'number' ? debate.confidence : 0);
 
+  const executiveReport = useMemo(
+    () =>
+      buildExecutiveDecisionReport({
+        sessionCode,
+        premise: debate?.premise ?? 'Untitled debate',
+        createdAt: debate?.createdAt ?? null,
+        verdict,
+        confidence,
+        agents,
+        resultData: debate?.resultData ?? null,
+        evidence: debate?.evidence,
+        runtimeSec: debate?.runtime ?? null,
+        agentCount: debate?.agentCount ?? null,
+        cost: debate?.cost ?? null,
+      }),
+    [
+      sessionCode,
+      debate?.premise,
+      debate?.createdAt,
+      debate?.resultData,
+      debate?.evidence,
+      debate?.runtime,
+      debate?.agentCount,
+      debate?.cost,
+      verdict,
+      confidence,
+      agents,
+    ],
+  );
+
   const phase = resolveDebateUiPhase(
     debate?.status,
     debate?.resultData,
@@ -143,12 +174,7 @@ export function Debate() {
     return (
       <PageContainer width="full" className="py-8">
         <DebateResultsDashboard
-          sessionCode={sessionCode}
-          premise={debate?.premise ?? 'Untitled debate'}
-          verdict={verdict}
-          confidence={confidence}
-          agents={agents}
-          createdAt={debate?.createdAt ?? null}
+          report={executiveReport}
           showErrorState={
             !hasMeaningfulVerdict(verdict) || isAiModelErrorVerdict(verdict)
           }
