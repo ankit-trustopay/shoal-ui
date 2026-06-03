@@ -171,9 +171,7 @@ function ReportSection({
 }
 
 function WhatIfSandbox() {
-  const [price, setPrice] = useState(99);
-  const [budget, setBudget] = useState(10000);
-  const [audience, setAudience] = useState('');
+  const [customScenario, setCustomScenario] = useState('');
 
   return (
     <section className="relative overflow-hidden rounded-xl border border-gray-200/90 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.06)]">
@@ -192,60 +190,21 @@ function WhatIfSandbox() {
           What-If Simulator
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-gray-500">
-          Stress-test assumptions before committing capital.
+          Describe an alternate scenario and re-run the swarm.
         </p>
       </div>
 
       <div className="relative space-y-5 px-6 py-6">
         <label className="block">
           <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-            Price
+            Custom Scenario
           </span>
-          <div className="mt-2 flex items-center gap-3">
-            <input
-              type="range"
-              min={0}
-              max={500}
-              step={1}
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-              className="h-1.5 w-full accent-orange-500"
-            />
-            <span className="w-14 shrink-0 text-right font-mono text-sm font-semibold tabular-nums text-gray-900">
-              ${price}
-            </span>
-          </div>
-        </label>
-
-        <label className="block">
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-            Marketing Budget
-          </span>
-          <div className="mt-2 flex items-center gap-3">
-            <input
-              type="range"
-              min={0}
-              max={50000}
-              step={500}
-              value={budget}
-              onChange={(e) => setBudget(Number(e.target.value))}
-              className="h-1.5 w-full accent-orange-500"
-            />
-            <span className="w-[4.5rem] shrink-0 text-right font-mono text-sm font-semibold tabular-nums text-gray-900">
-              ${budget.toLocaleString()}
-            </span>
-          </div>
-        </label>
-
-        <label className="block">
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-            Target Audience
-          </span>
-          <input
-            value={audience}
-            onChange={(e) => setAudience(e.target.value)}
-            placeholder="e.g. Series A B2B SaaS founders"
-            className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors focus:border-blue-300 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20"
+          <textarea
+            value={customScenario}
+            onChange={(e) => setCustomScenario(e.target.value)}
+            rows={5}
+            placeholder="e.g., What if my budget is only $500? or What if we only consider post-1990 data?"
+            className="mt-2 w-full resize-y rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2.5 text-sm leading-relaxed text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-blue-300 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20"
           />
         </label>
 
@@ -256,9 +215,6 @@ function WhatIfSandbox() {
           <Sparkles size={16} aria-hidden />
           Re-Simulate (10 Credits)
         </button>
-        <p className="text-center text-[11px] leading-relaxed text-gray-500">
-          Adjust levers, then re-run the swarm against your revised scenario.
-        </p>
       </div>
     </section>
   );
@@ -285,6 +241,19 @@ function VerdictHero({ report }: { report: ExecutiveDecisionReport }) {
             )}
           </div>
           <ConfidenceRing value={report.confidence} />
+        </div>
+
+        <div className="mt-8 flex gap-2.5 rounded-lg border border-amber-100/80 bg-amber-50/40 px-4 py-3">
+          <AlertTriangle
+            size={15}
+            className="mt-0.5 shrink-0 text-amber-600"
+            aria-hidden
+          />
+          <p className="text-xs leading-relaxed text-gray-500">
+            ⚠️ This report is synthesized from adversarial AI debate and live web
+            research. We do not claim 100% accuracy. Always verify critical
+            decisions.
+          </p>
         </div>
       </div>
 
@@ -410,48 +379,48 @@ function EvidenceVault({
 }: {
   evidence: ExecutiveDecisionReport['evidence'];
 }) {
+  const validEvidence = evidence.filter(
+    (item) => item.url && item.url !== '#' && item.url.startsWith('http'),
+  );
+
   return (
     <ReportSection title="Verified Sources">
-      <ul className="divide-y divide-gray-100">
-        {evidence.map((item, i) => {
-          const isPlaceholder = item.url === '#';
-          const Tag = isPlaceholder ? 'div' : 'a';
-          const linkProps = isPlaceholder
-            ? {}
-            : {
-                href: item.url,
-                target: '_blank' as const,
-                rel: 'noopener noreferrer',
-              };
-
-          return (
-            <li key={`${item.url}-${i}`}>
-              <Tag
-                {...linkProps}
-                className={`group flex items-start justify-between gap-4 py-4 transition-colors first:pt-0 last:pb-0 ${
-                  isPlaceholder ? 'cursor-default' : 'hover:bg-gray-50/80 -mx-2 px-2 rounded-lg'
-                }`}
+      {validEvidence.length > 0 ? (
+        <ul className="divide-y divide-gray-100">
+          {validEvidence.map((item) => (
+            <li key={item.url}>
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group -mx-2 flex items-start justify-between gap-4 rounded-lg px-2 py-4 transition-colors first:pt-0 last:pb-0 hover:bg-gray-50/80"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700">
-                    {item.title}
-                  </p>
-                  <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-gray-400">
                     {item.source}
                   </p>
+                  <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 truncate font-mono text-xs text-blue-600 group-hover:underline">
+                    {item.url}
+                  </p>
                 </div>
-                {!isPlaceholder && (
-                  <ExternalLink
-                    size={16}
-                    className="shrink-0 text-gray-400 group-hover:text-blue-600"
-                    aria-hidden
-                  />
-                )}
-              </Tag>
+                <ExternalLink
+                  size={16}
+                  className="mt-1 shrink-0 text-gray-400 group-hover:text-blue-600"
+                  aria-hidden
+                />
+              </a>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm leading-relaxed text-gray-500">
+          No live web sources were captured for this debate. Sources appear here
+          when Tavily research succeeds during deliberation.
+        </p>
+      )}
     </ReportSection>
   );
 }

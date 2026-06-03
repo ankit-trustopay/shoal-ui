@@ -241,26 +241,16 @@ function buildCriticalUnknowns(resultData: unknown): string[] {
 }
 
 function buildEvidence(evidence: SwarmEvidenceRecord[] | undefined): EvidenceCitation[] {
-  if (!evidence?.length) {
-    return [
-      {
-        title: 'Primary market sizing reference (pending engine ingest)',
-        url: '#',
-        source: 'Swarm Research',
-      },
-      {
-        title: 'Competitive landscape scan',
-        url: '#',
-        source: 'Swarm Research',
-      },
-    ];
-  }
+  if (!evidence?.length) return [];
 
-  return evidence.slice(0, 8).map((item) => ({
-    title: item.title || 'Untitled source',
-    url: item.url || '#',
-    source: item.source || 'Web',
-  }));
+  return evidence
+    .filter((item) => item.url?.trim() && item.url.startsWith('http'))
+    .slice(0, 12)
+    .map((item) => ({
+      title: item.title?.trim() || item.url,
+      url: item.url.trim(),
+      source: item.source?.trim() || 'Web',
+    }));
 }
 
 function buildExecution(
@@ -274,17 +264,33 @@ function buildExecution(
         : null,
     ) ??
     overviewActions[0]?.body ??
-    'Validate the top three assumptions with a 48-hour customer signal sprint (pricing, channel, and conversion).';
+    'Cross-check the strongest claims in this verdict against the cited sources above.';
 
   const planB =
     readString(
       isRecord(resultData) ? resultData.planB ?? resultData.plan_b : null,
     ) ??
     overviewActions[1]?.body ??
-    'Pivot to a narrower ICP with a lower CAC wedge offer while pausing full-scale launch spend.';
+    'If the primary recommendation fails a sanity check, restate the question with tighter constraints and re-run.';
 
   return { immediate, planB };
 }
+
+export type StoredFrictionEntry = {
+  name: string;
+  stance: 'AGREES' | 'DISAGREES' | 'NEUTRAL';
+  argument: string;
+};
+
+export type StoredPreMortem = {
+  failureModes: string[];
+  criticalUnknowns: string[];
+};
+
+export type StoredExecutionRoadmap = {
+  immediateAction: string;
+  planB: string;
+};
 
 export type BuildExecutiveReportInput = {
   sessionCode: string;
@@ -294,29 +300,162 @@ export type BuildExecutiveReportInput = {
   confidence: number;
   agents: DebateAgentResult[];
   resultData: unknown;
+  tldr?: unknown;
+  frictionMatrix?: unknown;
+  preMortem?: unknown;
+  executionRoadmap?: unknown;
   evidence?: SwarmEvidenceRecord[];
   runtimeSec?: number | null;
   agentCount?: number | null;
   cost?: number | null;
 };
 
+export function resolveCreditsConsumed(
+  cost: number | null | undefined,
+  resultData: unknown,
+): number {
+  if (typeof cost === 'number' && Number.isFinite(cost) && cost >= 0) {
+    return Math.floor(cost);
+  }
+
+  const rd = isRecord(resultData) ? resultData : null;
+  if (!rd) return 0;
+
+  const planned =
+    typeof rd.plannedCost === 'number' && Number.isFinite(rd.plannedCost)
+      ? Math.floor(rd.plannedCost)
+      : null;
+  if (planned !== null && planned >= 0) return planned;
+
+  const charged =
+    typeof rd.creditsCharged === 'number' && Number.isFinite(rd.creditsCharged)
+      ? Math.floor(rd.creditsCharged)
+      : null;
+  if (charged !== null && charged >= 0) return charged;
+
+  return 0;
+}
+
+function normalizeDbStance(value: unknown): AgentStance {
+  if (typeof value !== 'string') return 'neutral';
+  const upper = value.trim().toUpperCase();
+  if (upper === 'AGREES') return 'agrees';
+  if (upper === 'DISAGREES') return 'disagrees';
+  return 'neutral';
+}
+
+function parseStoredTldr(
+  columnValue: unknown,
+  resultData: unknown,
+): string[] | null {
+  const fromColumn = readStringArray(columnValue);
+  if (fromColumn.length >= 3) return fromColumn.slice(0, 5);
+
+  const rd = isRecord(resultData) ? resultData : null;
+  if (!rd) return null;
+  const nested = readStringArray(rd.tldr ?? rd.tldrBullets ?? rd.executiveSummary);
+  return nested.length >= 3 ? nested.slice(0, 5) : null;
+}
+
+function parseStoredFriction(
+  columnValue: unknown,
+  resultData: unknown,
+): FrictionAgent[] | null {
+  const raw = Array.isArray(columnValue)
+    ? columnValue
+    : isRecord(resultData)
+      ? (resultData.frictionMatrix ?? resultData.friction_matrix)
+      : null;
+
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+
+  const agents: FrictionAgent[] = [];
+  for (const item of raw) {
+    if (!isRecord(item)) continue;
+    const name = readString(item.name);
+    const summary =
+      readString(item.argument) ??
+      readString(item.summary) ??
+      readString(item.position);
+    if (!name || !summary) continue;
+    agents.push({
+      name,
+      stance: normalizeDbStance(item.stance),
+      summary: summary.length > 500 ? `${summary.slice(0, 497)}…` : summary,
+    });
+  }
+  return agents.length > 0 ? agents : null;
+}
+
+function parseStoredPreMortem(
+  columnValue: unknown,
+  resultData: unknown,
+): StoredPreMortem | null {
+  const raw = isRecord(columnValue)
+    ? columnValue
+    : isRecord(resultData)
+      ? (resultData.preMortem ?? resultData.pre_mortem)
+      : null;
+
+  if (!isRecord(raw)) return null;
+
+  const failureModes = readStringArray(
+    raw.failureModes ?? raw.failure_modes ?? raw.topFailureModes,
+  );
+  const criticalUnknowns = readStringArray(
+    raw.criticalUnknowns ?? raw.critical_unknowns ?? raw.unknowns,
+  );
+
+  if (failureModes.length === 0 || criticalUnknowns.length === 0) return null;
+  return { failureModes, criticalUnknowns };
+}
+
+function parseStoredRoadmap(
+  columnValue: unknown,
+  resultData: unknown,
+): StoredExecutionRoadmap | null {
+  const raw = isRecord(columnValue)
+    ? columnValue
+    : isRecord(resultData)
+      ? (resultData.executionRoadmap ?? resultData.execution_roadmap)
+      : null;
+
+  if (!isRecord(raw)) return null;
+
+  const immediateAction =
+    readString(raw.immediateAction) ?? readString(raw.immediate_action);
+  const planB = readString(raw.planB) ?? readString(raw.plan_b);
+
+  if (!immediateAction || !planB) return null;
+  return { immediateAction, planB };
+}
+
 export function buildExecutiveDecisionReport(
   input: BuildExecutiveReportInput,
 ): ExecutiveDecisionReport {
   const verdict = input.verdict.trim();
   const overview = parseSwarmOverview(input.resultData);
-  const rd = isRecord(input.resultData) ? input.resultData : null;
 
-  const tldrExplicit = rd
-    ? readStringArray(rd.tldr ?? rd.tldrBullets ?? rd.executiveSummary)
-    : [];
-
-  const frictionAgents = buildFrictionAgents(input.agents);
-
-  const { immediate, planB } = buildExecution(
+  const storedTldr = parseStoredTldr(input.tldr, input.resultData);
+  const storedFriction = parseStoredFriction(
+    input.frictionMatrix,
     input.resultData,
-    overview.recommendedActions,
   );
+  const storedPreMortem = parseStoredPreMortem(input.preMortem, input.resultData);
+  const storedRoadmap = parseStoredRoadmap(
+    input.executionRoadmap,
+    input.resultData,
+  );
+
+  const frictionAgents =
+    storedFriction ?? buildFrictionAgents(input.agents);
+
+  const { immediate, planB } = storedRoadmap
+    ? {
+        immediate: storedRoadmap.immediateAction,
+        planB: storedRoadmap.planB,
+      }
+    : buildExecution(input.resultData, overview.recommendedActions);
 
   return {
     sessionCode: input.sessionCode,
@@ -325,14 +464,14 @@ export function buildExecutiveDecisionReport(
     verdictHeadline: extractVerdictHeadline(verdict),
     verdictNarrative: verdict,
     confidence: Math.max(0, Math.min(100, Math.round(input.confidence))),
-    tldr: buildTldr(verdict, input.agents, tldrExplicit),
+    tldr: storedTldr ?? buildTldr(verdict, input.agents, []),
     frictionAgents,
-    failureModes: buildFailureModes(
-      input.resultData,
-      verdict,
-      overview.minorityDissent,
-    ),
-    criticalUnknowns: buildCriticalUnknowns(input.resultData),
+    failureModes: storedPreMortem
+      ? storedPreMortem.failureModes
+      : buildFailureModes(input.resultData, verdict, overview.minorityDissent),
+    criticalUnknowns: storedPreMortem
+      ? storedPreMortem.criticalUnknowns
+      : buildCriticalUnknowns(input.resultData),
     evidence: buildEvidence(input.evidence),
     immediateAction: immediate,
     planB: planB,
@@ -342,10 +481,7 @@ export function buildExecutiveDecisionReport(
         input.agentCount ?? 0,
         input.agents.length || 3,
       ),
-      creditsConsumed: Math.max(
-        0,
-        Math.floor(input.cost ?? input.agentCount ?? 0),
-      ),
+      creditsConsumed: resolveCreditsConsumed(input.cost, input.resultData),
     },
   };
 }

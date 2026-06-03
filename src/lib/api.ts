@@ -168,6 +168,10 @@ export interface SwarmRecord {
   cost?: number | null;
   agentProfiles?: unknown;
   debateTranscript?: unknown;
+  tldr?: unknown;
+  frictionMatrix?: unknown;
+  preMortem?: unknown;
+  executionRoadmap?: unknown;
   createdAt: string;
   messages?: SwarmMessageRecord[];
   evidence?: SwarmEvidenceRecord[];
